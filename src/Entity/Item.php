@@ -31,9 +31,13 @@ class Item
     #[ORM\OneToMany(mappedBy: 'item', targetEntity: OrderItem::class)]
     private Collection $orderItems;
 
+    #[ORM\OneToMany(mappedBy: 'item', targetEntity: ShoppingCartItem::class)]
+    private Collection $shoppingCartItems;
+
     public function __construct()
     {
         $this->orderItems = new ArrayCollection();
+        $this->shoppingCartItems = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -113,6 +117,36 @@ class Item
             // set the owning side to null (unless already changed)
             if ($orderItem->getItem() === $this) {
                 $orderItem->setItem(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ShoppingCartItem>
+     */
+    public function getShoppingCartItems(): Collection
+    {
+        return $this->shoppingCartItems;
+    }
+
+    public function addShoppingCartItem(ShoppingCartItem $shoppingCartItem): static
+    {
+        if (!$this->shoppingCartItems->contains($shoppingCartItem)) {
+            $this->shoppingCartItems->add($shoppingCartItem);
+            $shoppingCartItem->setItem($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShoppingCartItem(ShoppingCartItem $shoppingCartItem): static
+    {
+        if ($this->shoppingCartItems->removeElement($shoppingCartItem)) {
+            // set the owning side to null (unless already changed)
+            if ($shoppingCartItem->getItem() === $this) {
+                $shoppingCartItem->setItem(null);
             }
         }
 
