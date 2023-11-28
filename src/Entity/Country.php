@@ -19,6 +19,9 @@ class Country
     #[ORM\Column]
     private ?bool $eu = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $iso = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -44,6 +47,18 @@ class Country
     public function setEu(bool $eu): static
     {
         $this->eu = $eu;
+
+        return $this;
+    }
+
+    public function getIso(): ?string
+    {
+        return $this->iso;
+    }
+
+    public function setIso(string $iso): static
+    {
+        $this->iso = $iso;
 
         return $this;
     }
