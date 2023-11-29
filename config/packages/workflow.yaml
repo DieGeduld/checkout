@@ -1,2 +1,29 @@
 framework:
-    workflows: null
+  workflows:
+    checkout_process:
+      type: 'state_machine'
+      audit_trail:
+        enabled: true
+      marking_store:
+        type: 'method'
+        property: 'state'
+      supports:
+        - App\Entity\ShoppingCart
+      places:
+        - shopping_cart
+        - delivery_address
+        - summary
+        - ordered
+      transitions:
+        to_shopping_cart:
+            from: delivery_address
+            to: shopping_cart
+        to_delivery_address:
+            from: shopping_cart
+            to: delivery_address
+        to_summary:
+            from: delivery_address
+            to: summary
+        to_ordered:
+            from: summary
+            to: ordered

@@ -21,6 +21,9 @@ class ShoppingCart
     #[ORM\OneToMany(mappedBy: 'shoppingcart', targetEntity: ShoppingCartItem::class)]
     private Collection $shoppingCartItems;
 
+    #[ORM\Column(length: 255)]
+    private ?string $state = null;
+
     public function __construct()
     {
         $this->shoppingCartItems = new ArrayCollection();
@@ -69,6 +72,18 @@ class ShoppingCart
                 $shoppingCartItem->setShoppingcart(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getState(): ?string
+    {
+        return $this->state;
+    }
+
+    public function setState(string $state): static
+    {
+        $this->state = $state;
 
         return $this;
     }
