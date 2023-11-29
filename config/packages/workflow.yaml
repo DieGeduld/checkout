@@ -9,12 +9,18 @@ framework:
         property: 'state'
       supports:
         - App\Entity\ShoppingCart
+      initial_marking:
+        - shopping
       places:
+        - shopping
         - shopping_cart
         - delivery_address
         - summary
         - ordered
       transitions:
+        to_shopping:
+            from: shopping_cart
+            to: shopping
         to_shopping_cart:
             from: delivery_address
             to: shopping_cart
