@@ -26,12 +26,12 @@ class Order
     #[ORM\Column(length: 255)]
     private ?string $status = null;
 
-    #[ORM\OneToMany(mappedBy: 'purchaseorder', targetEntity: OrderItem::class)]
-    private Collection $orderItems;
+    #[ORM\OneToMany(mappedBy: 'purchaseorder', targetEntity: OrderProduct::class)]
+    private Collection $orderProducts;
 
     public function __construct()
     {
-        $this->orderItems = new ArrayCollection();
+        $this->orderProducts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -76,29 +76,29 @@ class Order
     }
 
     /**
-     * @return Collection<int, OrderItem>
+     * @return Collection<int, OrderProduct>
      */
-    public function getOrderItems(): Collection
+    public function getOrderProducts(): Collection
     {
-        return $this->orderItems;
+        return $this->orderProducts;
     }
 
-    public function addOrderItem(OrderItem $orderItem): static
+    public function addOrderProduct(OrderProduct $orderProduct): static
     {
-        if (!$this->orderItems->contains($orderItem)) {
-            $this->orderItems->add($orderItem);
-            $orderItem->setPurchaseorder($this);
+        if (!$this->orderProducts->contains($orderProduct)) {
+            $this->orderProducts->add($orderProduct);
+            $orderProduct->setPurchaseorder($this);
         }
 
         return $this;
     }
 
-    public function removeOrderItem(OrderItem $orderItem): static
+    public function removeOrderProduct(OrderProduct $orderProduct): static
     {
-        if ($this->orderItems->removeElement($orderItem)) {
+        if ($this->orderProducts->removeElement($orderProduct)) {
             // set the owning side to null (unless already changed)
-            if ($orderItem->getPurchaseorder() === $this) {
-                $orderItem->setPurchaseorder(null);
+            if ($orderProduct->getPurchaseorder() === $this) {
+                $orderProduct->setPurchaseorder(null);
             }
         }
 

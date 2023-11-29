@@ -18,15 +18,15 @@ class ShoppingCart
     #[ORM\OneToOne(inversedBy: 'shoppingCart', cascade: ['persist', 'remove'])]
     private ?User $user_id = null;
 
-    #[ORM\OneToMany(mappedBy: 'shoppingcart', targetEntity: ShoppingCartItem::class)]
-    private Collection $shoppingCartItems;
+    #[ORM\OneToMany(mappedBy: 'shoppingcart', targetEntity: ShoppingCartProduct::class)]
+    private Collection $shoppingCartProducts;
 
     #[ORM\Column(length: 255)]
     private ?string $state = null;
 
     public function __construct()
     {
-        $this->shoppingCartItems = new ArrayCollection();
+        $this->shoppingCartProducts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -47,29 +47,29 @@ class ShoppingCart
     }
 
     /**
-     * @return Collection<int, ShoppingCartItem>
+     * @return Collection<int, ShoppingCartProduct>
      */
-    public function getShoppingCartItems(): Collection
+    public function getShoppingCartProducts(): Collection
     {
-        return $this->shoppingCartItems;
+        return $this->shoppingCartProducts;
     }
 
-    public function addShoppingCartItem(ShoppingCartItem $shoppingCartItem): static
+    public function addShoppingCartProduct(ShoppingCartProduct $shoppingCartProduct): static
     {
-        if (!$this->shoppingCartItems->contains($shoppingCartItem)) {
-            $this->shoppingCartItems->add($shoppingCartItem);
-            $shoppingCartItem->setShoppingcart($this);
+        if (!$this->shoppingCartProducts->contains($shoppingCartProduct)) {
+            $this->shoppingCartProducts->add($shoppingCartProduct);
+            $shoppingCartProduct->setShoppingcart($this);
         }
 
         return $this;
     }
 
-    public function removeShoppingCartItem(ShoppingCartItem $shoppingCartItem): static
+    public function removeShoppingCartProduct(ShoppingCartProduct $shoppingCartProduct): static
     {
-        if ($this->shoppingCartItems->removeElement($shoppingCartItem)) {
+        if ($this->shoppingCartProducts->removeElement($shoppingCartProduct)) {
             // set the owning side to null (unless already changed)
-            if ($shoppingCartItem->getShoppingcart() === $this) {
-                $shoppingCartItem->setShoppingcart(null);
+            if ($shoppingCartProduct->getShoppingcart() === $this) {
+                $shoppingCartProduct->setShoppingcart(null);
             }
         }
 

@@ -2,22 +2,22 @@
 
 namespace App\Entity;
 
-use App\Repository\ShoppingCartItemRepository;
+use App\Repository\ShoppingCartProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: ShoppingCartItemRepository::class)]
-class ShoppingCartItem
+#[ORM\Entity(repositoryClass: ShoppingCartProductRepository::class)]
+class ShoppingCartProduct
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'shoppingCartItems')]
+    #[ORM\ManyToOne(inversedBy: 'shoppingCartProducts')]
     private ?ShoppingCart $shoppingcart = null;
 
-    #[ORM\ManyToOne(inversedBy: 'shoppingCartItems')]
-    private ?Item $item = null;
+    #[ORM\ManyToOne(inversedBy: 'shoppingCartProducts')]
+    private ?Product $product = null;
 
     #[ORM\Column]
     private ?int $quantity = null;
@@ -39,14 +39,14 @@ class ShoppingCartItem
         return $this;
     }
 
-    public function getItem(): ?Item
+    public function getProduct(): ?Product
     {
-        return $this->item;
+        return $this->product;
     }
 
-    public function setItem(?Item $item): static
+    public function setProduct(?Product $product): static
     {
-        $this->item = $item;
+        $this->product = $product;
 
         return $this;
     }

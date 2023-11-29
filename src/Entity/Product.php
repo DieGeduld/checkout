@@ -2,14 +2,14 @@
 
 namespace App\Entity;
 
-use App\Repository\ItemRepository;
+use App\Repository\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: ItemRepository::class)]
-class Item
+#[ORM\Entity(repositoryClass: ProductRepository::class)]
+class Product
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -28,16 +28,16 @@ class Item
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
-    #[ORM\OneToMany(mappedBy: 'item', targetEntity: OrderItem::class)]
-    private Collection $orderItems;
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: OrderProduct::class)]
+    private Collection $orderProducts;
 
-    #[ORM\OneToMany(mappedBy: 'item', targetEntity: ShoppingCartItem::class)]
-    private Collection $shoppingCartItems;
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ShoppingCartProduct::class)]
+    private Collection $shoppingCartProducts;
 
     public function __construct()
     {
-        $this->orderItems = new ArrayCollection();
-        $this->shoppingCartItems = new ArrayCollection();
+        $this->orderProducts = new ArrayCollection();
+        $this->shoppingCartProducts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -94,29 +94,29 @@ class Item
     }
 
     /**
-     * @return Collection<int, OrderItem>
+     * @return Collection<int, OrderProduct>
      */
-    public function getOrderItems(): Collection
+    public function getOrderProducts(): Collection
     {
-        return $this->orderItems;
+        return $this->orderProducts;
     }
 
-    public function addOrderItem(OrderItem $orderItem): static
+    public function addOrderProduct(OrderProduct $orderProduct): static
     {
-        if (!$this->orderItems->contains($orderItem)) {
-            $this->orderItems->add($orderItem);
-            $orderItem->setItem($this);
+        if (!$this->orderProducts->contains($orderProduct)) {
+            $this->orderProducts->add($orderProduct);
+            $orderProduct->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeOrderItem(OrderItem $orderItem): static
+    public function removeOrderProduct(OrderProduct $orderProduct): static
     {
-        if ($this->orderItems->removeElement($orderItem)) {
+        if ($this->orderProducts->removeElement($orderProduct)) {
             // set the owning side to null (unless already changed)
-            if ($orderItem->getItem() === $this) {
-                $orderItem->setItem(null);
+            if ($orderProduct->getProduct() === $this) {
+                $orderProduct->setProduct(null);
             }
         }
 
@@ -124,29 +124,29 @@ class Item
     }
 
     /**
-     * @return Collection<int, ShoppingCartItem>
+     * @return Collection<int, ShoppingCartProduct>
      */
-    public function getShoppingCartItems(): Collection
+    public function getShoppingCartProducts(): Collection
     {
-        return $this->shoppingCartItems;
+        return $this->shoppingCartProducts;
     }
 
-    public function addShoppingCartItem(ShoppingCartItem $shoppingCartItem): static
+    public function addShoppingCartProduct(ShoppingCartProduct $shoppingCartProduct): static
     {
-        if (!$this->shoppingCartItems->contains($shoppingCartItem)) {
-            $this->shoppingCartItems->add($shoppingCartItem);
-            $shoppingCartItem->setItem($this);
+        if (!$this->shoppingCartProducts->contains($shoppingCartProduct)) {
+            $this->shoppingCartProducts->add($shoppingCartProduct);
+            $shoppingCartProduct->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeShoppingCartItem(ShoppingCartItem $shoppingCartItem): static
+    public function removeShoppingCartProduct(ShoppingCartProduct $shoppingCartProduct): static
     {
-        if ($this->shoppingCartItems->removeElement($shoppingCartItem)) {
+        if ($this->shoppingCartProducts->removeElement($shoppingCartProduct)) {
             // set the owning side to null (unless already changed)
-            if ($shoppingCartItem->getItem() === $this) {
-                $shoppingCartItem->setItem(null);
+            if ($shoppingCartProduct->getProduct() === $this) {
+                $shoppingCartProduct->setProduct(null);
             }
         }
 
