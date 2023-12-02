@@ -19,11 +19,17 @@ use App\Entity\Address;
 class ShopController extends AbstractController
 {
     #[Route('/shop', name: 'app_shop')]
-    public function index(): Response
+    public function index(EntityManagerInterface $entityManager): Response
     {
+
+        // Get all Products
+        $products = $entityManager->getRepository(Product::class)->findAll();
+
         return $this->render('shop/index.html.twig', [
-            'controller_name' => 'ShopController',
+            'controller_name' => 'Products',
+            'products' => $products,
         ]);
+
     }
 
     // route for the shopping cart

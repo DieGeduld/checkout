@@ -11,10 +11,12 @@
 <div class="example-wrapper">
     <h1>Hello {{ controller_name }}! ✅</h1>
 
-    This friendly message is coming from:
+    <!-- show all products -->
+    <h2>Products</h2>
     <ul>
-        <li>Your controller at <code><a href="{{ '/Users/fabianwolf/Repos/checkout/src/Controller/ShopController.php'|file_link(0) }}">src/Controller/ShopController.php</a></code></li>
-        <li>Your template at <code><a href="{{ '/Users/fabianwolf/Repos/checkout/templates/shop/index.html.twig'|file_link(0) }}">templates/shop/index.html.twig</a></code></li>
+        {% for product in products %}
+            <li>{{ product.getName }}</li>
+        {% endfor %}
     </ul>
 </div>
 {% endblock %}
