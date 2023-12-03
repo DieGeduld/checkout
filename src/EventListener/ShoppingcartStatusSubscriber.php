@@ -107,7 +107,8 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             // 'p.id AS product_id', 
             'p.name AS name', 
             'p.price AS price', 
-            'p.price AS product_price'
+            'p.price AS product_price',
+            'p.price * scp.quantity AS sum'
         ])
         ->from(ShoppingCartProduct::class, 'scp')
         ->join('scp.product', 'p');       

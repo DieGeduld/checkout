@@ -15,4 +15,12 @@ class AddressController extends AbstractController
             'controller_name' => 'AddressController',
         ]);
     }
+
+    #[Route('/address/create', name: 'app_address_create')]
+    public function create(): Response
+    {
+        return $this->render('address/create.html.twig', [
+            'controller_name' => 'AddressController',
+        ]);
+    }
 }

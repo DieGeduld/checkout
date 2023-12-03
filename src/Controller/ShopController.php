@@ -185,10 +185,10 @@ class ShopController extends AbstractController
     #[Route('/shop/deliveryaddress', name: 'app_shop_deliveryaddress')]
     public function deliveryaddress(EntityManagerInterface $entityManager): Response
     {
-        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['user_id' => $this->security->getUser()->getId() ]);
+        $addresses = $this->entityManager->getRepository(Address::class)->findBy(['user_id' => $this->security->getUser()->getId() ]);
 
         return $this->render('shop/deliveryaddress.html.twig', [
-            'address' => $address,
+            'addresses' => $addresses,
         ]);
     }
 

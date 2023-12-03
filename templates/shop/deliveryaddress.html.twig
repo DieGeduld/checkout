@@ -11,6 +11,22 @@
 <div class="example-wrapper">
     <h1>Delivery Address</h1>
 
+    {% if addresses is empty %}
+        <p>Keine Adressen vorhanden, bitte eine neue Anlegen:</p>
+        <a href="{{ path('app_address_create') }}">Neue Adresse anlegen</a>
+    
+    {% else %}
+        {% for address in addresses %}
+            <p>{{ address.street }} {{ address.number }}</p>
+        {% endfor %}
+
+    {% endif %}
+
+    <br>
+    <br>
+    <br>
+
+    <h2>Shopping Cart</h2>
     <table width="100%">
         <tr>
             <th>Produkt</th>
@@ -24,10 +40,9 @@
         {% for item in shoppingcart %}
             <tr>
                 <td>{{ item.name }}</td>
-                <td>{{ item.price }}</td>
+                <td>{{ item.price|number_format(2, ',', '.') }} €</td>
                 <td><input type="text" value="{{ item.quantity }}"></td>
-                <td>{{ item.price * item.quantity }}</td>
-                    
+                <td>{{ item.sum|number_format(2, ',', '.') }} €</td>
                 <td><a href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
                 <td><a href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
                 <td><a href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
