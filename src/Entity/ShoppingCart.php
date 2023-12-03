@@ -24,6 +24,9 @@ class ShoppingCart
     #[ORM\Column(length: 255)]
     private ?string $state = null;
 
+    #[ORM\Column(type: "string", length: 255, nullable: true)]
+    private $sessionId;
+
     public function __construct()
     {
         $this->shoppingCartProducts = new ArrayCollection();
@@ -46,36 +49,6 @@ class ShoppingCart
         return $this;
     }
 
-    /**
-     * @return Collection<int, ShoppingCartProduct>
-     */
-    public function getShoppingCartProducts(): Collection
-    {
-        return $this->shoppingCartProducts;
-    }
-
-    public function addShoppingCartProduct(ShoppingCartProduct $shoppingCartProduct): static
-    {
-        if (!$this->shoppingCartProducts->contains($shoppingCartProduct)) {
-            $this->shoppingCartProducts->add($shoppingCartProduct);
-            $shoppingCartProduct->setShoppingcart($this);
-        }
-
-        return $this;
-    }
-
-    public function removeShoppingCartProduct(ShoppingCartProduct $shoppingCartProduct): static
-    {
-        if ($this->shoppingCartProducts->removeElement($shoppingCartProduct)) {
-            // set the owning side to null (unless already changed)
-            if ($shoppingCartProduct->getShoppingcart() === $this) {
-                $shoppingCartProduct->setShoppingcart(null);
-            }
-        }
-
-        return $this;
-    }
-
     public function getState(): ?string
     {
         return $this->state;
@@ -84,6 +57,18 @@ class ShoppingCart
     public function setState(string $state): static
     {
         $this->state = $state;
+
+        return $this;
+    }
+
+    public function getSessionId(): ?string
+    {
+        return $this->sessionId;
+    }
+
+    public function setSessionId(?string $sessionId): self
+    {
+        $this->sessionId = $sessionId;
 
         return $this;
     }

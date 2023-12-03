@@ -5,12 +5,56 @@
         <title>{% block title %}Welcome!{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
         {% block stylesheets %}
+            {{ encore_entry_link_tags('app') }}
         {% endblock %}
 
         {% block javascripts %}
+            {{ encore_entry_script_tags('app') }}
         {% endblock %}
     </head>
     <body>
+
+    
+        <!-- if route is "lala" -->
+        {% if app.request.get('_route') != 'app_shop_shoppingcart' %}
+        <div class="app_shop_shoppingcart">
+
+            <h1>Übersicht</h1>
+            {% if shoppingcart is empty %}
+                <p>Der Warenkorb ist leer</p>
+            {% else %}
+            
+                <table width="100%">
+                    <tr>
+                        <th>Produkt</th>
+                        <th>Preis</th>
+                        <th>Anzahl</th>
+                        <th>Gesamt</th>
+                        <th></th>
+
+                    </tr>
+
+                    {% for item in shoppingcart %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.price }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.price * item.quantity }}</td>
+                                
+                            <td><a href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
+                            <td><a href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
+                            <td><a href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
+
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
+            <br>
+            <a href="{{ path('app_shop_shoppingcart') }}">Zum Warenkorb</a>
+        </div>
+        {% endif %}
+            
         {% block body %}{% endblock %}
+        {{ encore_entry_script_tags('app') }}
     </body>
 </html>

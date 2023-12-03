@@ -1,0 +1,13 @@
+body {
+    background-color: #EFEFEF;
+}
+
+.app_shop_shoppingcart {
+    background-color: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    border-radius: 5px;
+    box-shadow: 0 0 5px #CCCCCC;
+    margin: 20px auto;
+    padding: 20px;
+    width: 600px;
+}

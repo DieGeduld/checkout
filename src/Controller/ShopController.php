@@ -12,18 +12,30 @@ use Faker\Factory;
 use App\Factory\ProductFactory;
 use App\Entity\Product;
 use App\Entity\ShoppingCart;
+use App\Entity\ShoppingCartProduct;
 use App\Entity\User;
 use App\Entity\Country;
 use App\Entity\Address;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpFoundation\RequestStack;
+
 
 class ShopController extends AbstractController
 {
+    private $entityManager;
+    private $requestStack;
+
+    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack)
+    {
+        $this->entityManager = $entityManager;
+        $this->requestStack = $requestStack;
+    }
+
     #[Route('/shop', name: 'app_shop')]
     public function index(EntityManagerInterface $entityManager): Response
     {
-
         // Get all Products
-        $products = $entityManager->getRepository(Product::class)->findAll();
+        $products = $this->entityManager->getRepository(Product::class)->findAll();
 
         return $this->render('shop/index.html.twig', [
             'controller_name' => 'Products',
@@ -32,22 +44,116 @@ class ShopController extends AbstractController
 
     }
 
+    //add to cart
+    #[Route('/shop/addtocart/{id}', name: 'app_shop_addtocart')]
+    public function addtocart(int $id, int $quantity = 1): Response
+    {
+        $product = $this->entityManager->getRepository(Product::class)->find($id);
+        $shoppingCart = $this->getShoppingCart();
+    
+        if ($product && $shoppingCart) {
+            // getting ShoppingCartProduct
+            $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->findOneBy([
+                'shoppingcart' => $shoppingCart, 
+                'product' => $product
+            ]);
+
+            if ($shoppingCartProduct == null) {
+                if ($quantity <= 0) {
+                    return $this->redirectToRoute('app_shop_shoppingcart');
+                }
+                $shoppingCartProduct = new ShoppingCartProduct();
+                $shoppingCartProduct->setShoppingcart($shoppingCart);
+                $shoppingCartProduct->setProduct($product);
+                $shoppingCartProduct->setQuantity($quantity);
+                $this->entityManager->persist($shoppingCartProduct);
+            } else {
+
+                if ($shoppingCartProduct->getQuantity() + $quantity <= 0) {
+                    echo "start";
+                    var_dump($shoppingCartProduct->getQuantity() );
+                    var_dump($quantity);
+                    var_dump($shoppingCartProduct->getQuantity() + $quantity);
+                    $this->entityManager->remove($shoppingCartProduct);
+                } else {
+                    echo "start2";
+                    var_dump($shoppingCartProduct->getQuantity());
+                    var_dump($quantity);
+                    var_dump($shoppingCartProduct->getQuantity() + $quantity);
+                    $shoppingCartProduct->setQuantity($shoppingCartProduct->getQuantity() + $quantity);
+                }
+
+            }
+
+            $this->entityManager->flush();
+        }
+
+        // return from where you came
+        $request = $this->requestStack->getCurrentRequest();
+        $referer = $request->headers->get('referer');
+        return $this->redirect($referer);
+
+    }
+
     // route for the shopping cart
     #[Route('/shop/shoppingcart', name: 'app_shop_shoppingcart')]
     public function shoppingcart(EntityManagerInterface $entityManager): Response
     {
-        $shoppingCart = $entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId(), 'state' => 'shopping']);
+        $shoppingCart = $this->getShoppingCart();
 
         return $this->render('shop/shoppingcart.html.twig', [
             'shoppingCart' => $shoppingCart,
         ]);
     }
 
+    // app_shop_shoppingcart_increase
+    #[Route('/shop/shoppingcart/increase/{id}', name: 'app_shop_shoppingcart_increase')]
+    public function shoppingcart_increase(EntityManagerInterface $entityManager, int $id): Response
+    {
+        
+        $this->addtocart($id, 1);
+
+        // return from where you came
+        $request = $this->requestStack->getCurrentRequest();
+        $referer = $request->headers->get('referer');
+        return $this->redirect($referer);
+    }
+
+    // app_shop_shoppingcart_decrease
+    #[Route('/shop/shoppingcart/decrease/{id}', name: 'app_shop_shoppingcart_decrease')]
+    public function shoppingcart_decrease(int $id): Response
+    {
+        $this->addtocart($id, -1);
+
+        // return from where you came
+        $request = $this->requestStack->getCurrentRequest();
+        $referer = $request->headers->get('referer');
+        return $this->redirect($referer);
+    }
+
+    // app_shop_shoppingcart_remove
+    #[Route('/shop/shoppingcart/remove/{id}', name: 'app_shop_shoppingcart_remove')]
+    public function shoppingcart_remove(int $id): Response
+    {
+
+        $product = $this->entityManager->getRepository(Product::class)->find($id);
+        $shoppingCart = $this->getShoppingCart();
+
+        $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->findOneBy([
+            'shoppingcart' => $shoppingCart, 
+            'product' => $product
+        ]);
+        $this->entityManager->remove($shoppingCartProduct);
+        $this->entityManager->flush();
+
+        return $this->redirectToRoute('app_shop_shoppingcart');
+    }
+
     // route for the delivery address
     #[Route('/shop/deliveryaddress', name: 'app_shop_deliveryaddress')]
     public function deliveryaddress(EntityManagerInterface $entityManager): Response
     {
-        $address = $entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
 
         return $this->render('shop/deliveryaddress.html.twig', [
             'address' => $address,
@@ -58,8 +164,8 @@ class ShopController extends AbstractController
     #[Route('/shop/summary', name: 'app_shop_summary')]
     public function summary(EntityManagerInterface $entityManager): Response
     {
-        $shoppingCart = $entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId(), 'state' => 'shopping']);
-        $address = $entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId(), 'state' => 'shopping']);
+        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
 
         return $this->render('shop/summary.html.twig', [
             'shoppingCart' => $shoppingCart,
@@ -71,8 +177,8 @@ class ShopController extends AbstractController
     #[Route('/shop/ordered', name: 'app_shop_ordered')]
     public function ordered(EntityManagerInterface $entityManager): Response
     {
-        $shoppingCart = $entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId(), 'state' => 'ordered']);
-        $address = $entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId(), 'state' => 'ordered']);
+        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
 
         return $this->render('shop/ordered.html.twig', [
             'shoppingCart' => $shoppingCart,
@@ -86,7 +192,7 @@ class ShopController extends AbstractController
     #[Route('/shop/products', name: 'app_shop_products')]
     public function products(EntityManagerInterface $entityManager): Response
     {
-        $products = $entityManager->getRepository(Product::class)->findAll();
+        $products = $this->entityManager->getRepository(Product::class)->findAll();
 
         return $this->render('shop/products.html.twig', [
             'products' => $products,
@@ -94,7 +200,56 @@ class ShopController extends AbstractController
     }
 
 
+    // get shopping cart
+    public function getShoppingCart(): ShoppingCart
+    {
+        if ($this->getUser() == null) {
+            $request = $this->requestStack->getCurrentRequest();
+            $sessionId = $request->getSession()->getId();
+
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
+
+            if ($shoppingCart == null) {
+                $shoppingCart = new ShoppingCart();
+                $shoppingCart->setSessionId($sessionId);
+                $shoppingCart->setState("shopping");
+                $this->entityManager->persist($shoppingCart);
+                $this->entityManager->flush();
+            }
+
+        } else {
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+        }
+        return $shoppingCart;
+
+    }    
+    // get shopping cart
     
+    public function getShoppingCartProducts(): Array
+    {
+        if ($this->getUser() == null) {
+            $request = $this->requestStack->getCurrentRequest();
+            $sessionId = $request->getSession()->getId();
+
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
+
+            if ($shoppingCart == null) {
+                $shoppingCart = new ShoppingCart();
+                $shoppingCart->setSessionId($sessionId);
+                $shoppingCart->setState("shopping");
+                $this->entityManager->persist($shoppingCart);
+                $this->entityManager->flush();
+            }
+
+            $shoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $shoppingCart->getId()]);
+
+
+        } else {
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+        }
+        return $shoppingCartProducts;
+
+    }    
 
 
 
@@ -106,7 +261,7 @@ class ShopController extends AbstractController
 
 
         // truncate table
-        $connection = $entityManager->getConnection();
+        $connection = $this->entityManager->getConnection();
         $platform = $connection->getDatabasePlatform();
         $connection->executeStatement($platform->getTruncateTableSQL('product', true));
         $connection->executeStatement($platform->getTruncateTableSQL('shopping_cart', true));
@@ -135,7 +290,7 @@ class ShopController extends AbstractController
             $product->setStock($faker->numberBetween(50, 200));
             $product->setPrice($faker->randomFloat(2, 1, 100));
             $product->setDescription($faker->text);
-            $entityManager->persist($product);
+            $this->entityManager->persist($product);
         }
 
         /*
@@ -152,7 +307,7 @@ class ShopController extends AbstractController
         $user->setPassword($hashedPassword);
         $user->setEmail("fw@unkonventionell.at");
         $user->setIsVerified(true);
-        $entityManager->persist($user);
+        $this->entityManager->persist($user);
 
         /*
          * Shopping Cart
@@ -161,44 +316,44 @@ class ShopController extends AbstractController
         $shoppingCart = new ShoppingCart();
         $shoppingCart->setUserId($user->getId());
         $shoppingCart->setState("shopping");
-        $entityManager->persist($shoppingCart);
+        $this->entityManager->persist($shoppingCart);
         // Country
 
         $austria = new Country();
         $austria->setName("Österreich");
         $austria->setEu(true);
         $austria->setIso("AT");
-        $entityManager->persist($austria);
+        $this->entityManager->persist($austria);
         $germany = new Country();
         $germany->setName("Deutschland");
         $germany->setEu(true);
         $germany->setIso("DE");
-        $entityManager->persist($germany);
+        $this->entityManager->persist($germany);
         $france = new Country();
         $france->setName("Frankreich");
         $france->setEu(true);
         $france->setIso("FR");
-        $entityManager->persist($france);
+        $this->entityManager->persist($france);
         $unitedKingdom = new Country();
         $unitedKingdom->setName("Vereinigtes Königreich");
         $unitedKingdom->setEu(false);
         $unitedKingdom->setIso("GB");
-        $entityManager->persist($unitedKingdom);
+        $this->entityManager->persist($unitedKingdom);
         $usa = new Country();
         $usa->setName("Vereinigte Staaten");
         $usa->setEu(false);
         $usa->setIso("US");
-        $entityManager->persist($usa);
+        $this->entityManager->persist($usa);
         $china = new Country();
         $china->setName("China");
         $china->setEu(false);
         $china->setIso("CN");
-        $entityManager->persist($china);
+        $this->entityManager->persist($china);
         $russia = new Country();
         $russia->setName("Russland");
         $russia->setEu(false);
         $russia->setIso("RU");
-        $entityManager->persist($russia);
+        $this->entityManager->persist($russia);
 
         /*
          * Address
@@ -210,7 +365,7 @@ class ShopController extends AbstractController
         $address->setStreet("Teststraße 1");
         $address->setZip("1234");
         
-        $entityManager->flush();
+        $this->entityManager->flush();
 
         return new Response(
             "<html><body><h1>" . $faker->text . " Shop</h1></body></html>"

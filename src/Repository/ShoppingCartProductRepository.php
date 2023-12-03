@@ -2,27 +2,27 @@
 
 namespace App\Repository;
 
-use App\Entity\ShoppingCartItem;
+use App\Entity\ShoppingCartProduct;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<ShoppingCartItem>
+ * @extends ServiceEntityRepository<ShoppingCartProduct>
  *
- * @method ShoppingCartItem|null find($id, $lockMode = null, $lockVersion = null)
- * @method ShoppingCartItem|null findOneBy(array $criteria, array $orderBy = null)
- * @method ShoppingCartItem[]    findAll()
- * @method ShoppingCartItem[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method ShoppingCartProduct|null find($id, $lockMode = null, $lockVersion = null)
+ * @method ShoppingCartProduct|null findOneBy(array $criteria, array $orderBy = null)
+ * @method ShoppingCartProduct[]    findAll()
+ * @method ShoppingCartProduct[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ShoppingCartItemRepository extends ServiceEntityRepository
+class ShoppingCartProductRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, ShoppingCartItem::class);
+        parent::__construct($registry, ShoppingCartProduct::class);
     }
 
 //    /**
-//     * @return ShoppingCartItem[] Returns an array of ShoppingCartItem objects
+//     * @return ShoppingCartProduct[] Returns an array of ShoppingCartProduct objects
 //     */
 //    public function findByExampleField($value): array
 //    {
@@ -36,7 +36,7 @@ class ShoppingCartItemRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-//    public function findOneBySomeField($value): ?ShoppingCartItem
+//    public function findOneBySomeField($value): ?ShoppingCartProduct
 //    {
 //        return $this->createQueryBuilder('s')
 //            ->andWhere('s.exampleField = :val')
