@@ -21,7 +21,7 @@
 
             <h1>Übersicht</h1>
             {% if shoppingcart is empty %}
-                <p>Der Warenkorb ist leer</p>
+                <p>Ihr Warenkorb ist leer</p>
             {% else %}
             
                 <table width="100%">
@@ -48,9 +48,9 @@
                         </tr>
                     {% endfor %}
                 </table>
+                <br>
+                <a href="{{ path('app_shop_shoppingcart') }}">Zum Checkout</a>
             {% endif %}
-            <br>
-            <a href="{{ path('app_shop_shoppingcart') }}">Zum Warenkorb</a>
         </div>
         {% endif %}
             

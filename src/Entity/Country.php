@@ -85,7 +85,7 @@ class Country
     {
         if (!$this->addresses->contains($address)) {
             $this->addresses->add($address);
-            $address->setCountryId($this);
+            $address->setCountry($this);
         }
 
         return $this;
@@ -96,7 +96,7 @@ class Country
         if ($this->addresses->removeElement($address)) {
             // set the owning side to null (unless already changed)
             if ($address->getCountryId() === $this) {
-                $address->setCountryId(null);
+                $address->setCountry(null);
             }
         }
 

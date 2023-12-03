@@ -18,17 +18,20 @@ use App\Entity\Country;
 use App\Entity\Address;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Bundle\SecurityBundle\Security;
 
 
 class ShopController extends AbstractController
 {
     private $entityManager;
     private $requestStack;
+    private $security;
 
-    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack)
+    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security)
     {
         $this->entityManager = $entityManager;
         $this->requestStack = $requestStack;
+        $this->security = $security;
     }
 
     #[Route('/shop', name: 'app_shop')]
@@ -91,6 +94,9 @@ class ShopController extends AbstractController
         // return from where you came
         $request = $this->requestStack->getCurrentRequest();
         $referer = $request->headers->get('referer');
+        if ($referer === null) {
+            $referer = $this->generateUrl('app_shop');
+        }
         return $this->redirect($referer);
 
     }
@@ -100,6 +106,10 @@ class ShopController extends AbstractController
     public function shoppingcart(EntityManagerInterface $entityManager): Response
     {
         $shoppingCart = $this->getShoppingCart();
+
+        if ($shoppingCart->getShoppingCartProducts()->count() == 0) {
+            return $this->redirectToRoute('app_shop');
+        }
 
         return $this->render('shop/shoppingcart.html.twig', [
             'shoppingCart' => $shoppingCart,
@@ -116,6 +126,9 @@ class ShopController extends AbstractController
         // return from where you came
         $request = $this->requestStack->getCurrentRequest();
         $referer = $request->headers->get('referer');
+        if ($referer === null) {
+            $referer = $this->generateUrl('app_shop');
+        }
         return $this->redirect($referer);
     }
 
@@ -128,6 +141,9 @@ class ShopController extends AbstractController
         // return from where you came
         $request = $this->requestStack->getCurrentRequest();
         $referer = $request->headers->get('referer');
+        if ($referer === null) {
+            $referer = $this->generateUrl('app_shop');
+        }
         return $this->redirect($referer);
     }
 
@@ -135,7 +151,6 @@ class ShopController extends AbstractController
     #[Route('/shop/shoppingcart/remove/{id}', name: 'app_shop_shoppingcart_remove')]
     public function shoppingcart_remove(int $id): Response
     {
-
         $product = $this->entityManager->getRepository(Product::class)->find($id);
         $shoppingCart = $this->getShoppingCart();
 
@@ -145,15 +160,20 @@ class ShopController extends AbstractController
         ]);
         $this->entityManager->remove($shoppingCartProduct);
         $this->entityManager->flush();
-
-        return $this->redirectToRoute('app_shop_shoppingcart');
+        
+        $request = $this->requestStack->getCurrentRequest();
+        $referer = $request->headers->get('referer');
+        if ($referer === null) {
+            $referer = $this->generateUrl('app_shop');
+        }
+        return $this->redirect($referer);
     }
 
     // route for the delivery address
     #[Route('/shop/deliveryaddress', name: 'app_shop_deliveryaddress')]
     public function deliveryaddress(EntityManagerInterface $entityManager): Response
     {
-        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->security->getUser()->getId() ]);
 
         return $this->render('shop/deliveryaddress.html.twig', [
             'address' => $address,
@@ -164,8 +184,8 @@ class ShopController extends AbstractController
     #[Route('/shop/summary', name: 'app_shop_summary')]
     public function summary(EntityManagerInterface $entityManager): Response
     {
-        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId(), 'state' => 'shopping']);
-        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' =>$this->security->getUser()->getId(), 'state' => 'shopping']);
+        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' =>$this->security->getUser()->getId()]);
 
         return $this->render('shop/summary.html.twig', [
             'shoppingCart' => $shoppingCart,
@@ -177,8 +197,8 @@ class ShopController extends AbstractController
     #[Route('/shop/ordered', name: 'app_shop_ordered')]
     public function ordered(EntityManagerInterface $entityManager): Response
     {
-        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId(), 'state' => 'ordered']);
-        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' =>$this->security->getUser()->getId(), 'state' => 'ordered']);
+        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' =>$this->security->getUser()->getId()]);
 
         return $this->render('shop/ordered.html.twig', [
             'shoppingCart' => $shoppingCart,
@@ -218,7 +238,7 @@ class ShopController extends AbstractController
             }
 
         } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' =>$this->security->getUser()->getId()]);
         }
         return $shoppingCart;
 
@@ -245,7 +265,7 @@ class ShopController extends AbstractController
 
 
         } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => $this->getUser()->getId()]);
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' =>$this->security->getUser()->getId()]);
         }
         return $shoppingCartProducts;
 
@@ -314,7 +334,7 @@ class ShopController extends AbstractController
          */
 
         $shoppingCart = new ShoppingCart();
-        $shoppingCart->setUserId($user->getId());
+        $shoppingCart->setUser($user->getId());
         $shoppingCart->setState("shopping");
         $this->entityManager->persist($shoppingCart);
         // Country
@@ -360,8 +380,8 @@ class ShopController extends AbstractController
          */
 
         $address = new Address();
-        $address->setUserId($user->getId());
-        $address->setCountryId($germany->getId());
+        $address->setUser($user->getId());
+        $address->setCountry($germany->getId());
         $address->setStreet("Teststraße 1");
         $address->setZip("1234");
         

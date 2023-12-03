@@ -128,12 +128,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // unset the owning side of the relation if necessary
         if ($shoppingCart === null && $this->shoppingCart !== null) {
-            $this->shoppingCart->setUserId(null);
+            $this->shoppingCart->setUser(null);
         }
 
         // set the owning side of the relation if necessary
         if ($shoppingCart !== null && $shoppingCart->getUserId() !== $this) {
-            $shoppingCart->setUserId($this);
+            $shoppingCart->setUser($this);
         }
 
         $this->shoppingCart = $shoppingCart;
@@ -153,7 +153,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->addresses->contains($address)) {
             $this->addresses->add($address);
-            $address->setUserId($this);
+            $address->setUser($this);
         }
 
         return $this;
@@ -164,7 +164,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->addresses->removeElement($address)) {
             // set the owning side to null (unless already changed)
             if ($address->getUserId() === $this) {
-                $address->setUserId(null);
+                $address->setUser(null);
             }
         }
 
@@ -183,7 +183,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->orders->contains($order)) {
             $this->orders->add($order);
-            $order->setUserId($this);
+            $order->setUser($this);
         }
 
         return $this;
@@ -194,7 +194,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->orders->removeElement($order)) {
             // set the owning side to null (unless already changed)
             if ($order->getUserId() === $this) {
-                $order->setUserId(null);
+                $order->setUser(null);
             }
         }
 

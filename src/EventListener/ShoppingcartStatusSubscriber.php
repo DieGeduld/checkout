@@ -48,7 +48,8 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
         // get current user
         $user = $this->security->getUser();
 
-        // used is not logged in
+        // immer den aktuellen Warenkorb mitgeben:
+
         if ($user === null) {
             $sessionId = $request->getSession()->getId();
 
@@ -63,27 +64,39 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
                 $this->entityManager->persist($shoppingCart);
                 $this->entityManager->flush();
             }
-
-            $queryBuilder = $this->entityManager->createQueryBuilder();
-
-            $queryBuilder->select([
-                'p.id AS id', 
-                'scp.quantity AS quantity', 
-                // 'p.id AS product_id', 
-                'p.name AS name', 
-                'p.price AS price', 
-                'p.price AS product_price'
-            ])
-            ->from(ShoppingCartProduct::class, 'scp')
-            ->join('scp.product', 'p');
-        
-            $products = $queryBuilder->getQuery()->getResult();
-
-            $this->twig->addGlobal('shoppingcart', $products);
-
+            
         } else {
+            // Wenn der User eingeloggt ist
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' => 1 ]);
 
+            // if shopping cart does not exist, create new one
+            if ($shoppingCart === null) {
+                $shoppingCart = new ShoppingCart();
+                $shoppingCart->setUser($user);
+                $shoppingCart->setState('shopping');
+                $this->entityManager->persist($shoppingCart);
+                $this->entityManager->flush();
+            }
         }  
+
+
+
+        $queryBuilder = $this->entityManager->createQueryBuilder();
+
+        $queryBuilder->select([
+            'p.id AS id', 
+            'scp.quantity AS quantity', 
+            // 'p.id AS product_id', 
+            'p.name AS name', 
+            'p.price AS price', 
+            'p.price AS product_price'
+        ])
+        ->from(ShoppingCartProduct::class, 'scp')
+        ->join('scp.product', 'p');
+    
+        $products = $queryBuilder->getQuery()->getResult();
+
+        $this->twig->addGlobal('shoppingcart', $products);
 
         // var_dump($routeName);
     
