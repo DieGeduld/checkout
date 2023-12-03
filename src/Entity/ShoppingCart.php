@@ -16,7 +16,7 @@ class ShoppingCart
     private ?int $id = null;
 
     #[ORM\OneToOne(inversedBy: 'shoppingCart', cascade: ['persist', 'remove'])]
-    private ?User $user = null;
+    private ?User $user_id = null;
 
     #[ORM\OneToMany(mappedBy: 'shoppingcart', targetEntity: ShoppingCartProduct::class)]
     private Collection $shoppingCartProducts;
@@ -37,14 +37,14 @@ class ShoppingCart
         return $this->id;
     }
 
-    public function getUser(): ?User
+    public function getUserId(): ?User
     {
-        return $this->user;
+        return $this->user_id;
     }
 
-    public function setUser(?User $user): static
+    public function setUserId(?User $user_id): static
     {
-        $this->user = $user;
+        $this->user_id = $user_id;
 
         return $this;
     }
@@ -87,5 +87,4 @@ class ShoppingCart
 
         return $this;
     }
-
 }

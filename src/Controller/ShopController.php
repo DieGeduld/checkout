@@ -19,6 +19,9 @@ use App\Entity\Address;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Workflow\Workflow;
+use Symfony\Component\Workflow\Exception\TransitionException;
+use Symfony\Component\Workflow\Registry;
 
 
 class ShopController extends AbstractController
@@ -26,17 +29,23 @@ class ShopController extends AbstractController
     private $entityManager;
     private $requestStack;
     private $security;
+    private $workflow;
+    private $workflowRegistry;
 
-    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security)
+    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security, Workflow $workflow, Registry $workflowRegistry)
     {
         $this->entityManager = $entityManager;
         $this->requestStack = $requestStack;
         $this->security = $security;
+        $this->workflow = $workflow;
+        $this->workflowRegistry = $workflowRegistry;
     }
 
     #[Route('/shop', name: 'app_shop')]
-    public function index(EntityManagerInterface $entityManager): Response
+    public function index(): Response
     {
+        $this->changeState("shopping");
+
         // Get all Products
         $products = $this->entityManager->getRepository(Product::class)->findAll();
 
@@ -105,6 +114,9 @@ class ShopController extends AbstractController
     #[Route('/shop/shoppingcart', name: 'app_shop_shoppingcart')]
     public function shoppingcart(EntityManagerInterface $entityManager): Response
     {
+
+        $this->changeState("shopping_cart");
+
         $shoppingCart = $this->getShoppingCart();
 
         if ($shoppingCart->getShoppingCartProducts()->count() == 0) {
@@ -173,7 +185,7 @@ class ShopController extends AbstractController
     #[Route('/shop/deliveryaddress', name: 'app_shop_deliveryaddress')]
     public function deliveryaddress(EntityManagerInterface $entityManager): Response
     {
-        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' => $this->security->getUser()->getId() ]);
+        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['user_id' => $this->security->getUser()->getId() ]);
 
         return $this->render('shop/deliveryaddress.html.twig', [
             'address' => $address,
@@ -184,41 +196,40 @@ class ShopController extends AbstractController
     #[Route('/shop/summary', name: 'app_shop_summary')]
     public function summary(EntityManagerInterface $entityManager): Response
     {
-        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' =>$this->security->getUser()->getId(), 'state' => 'shopping']);
-        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' =>$this->security->getUser()->getId()]);
 
-        return $this->render('shop/summary.html.twig', [
-            'shoppingCart' => $shoppingCart,
-            'address' => $address,
-        ]);
+        $this->changeState("summary");
+
+        $shoppingCart = $this->getShoppingCart();
+
+        if ($this->security->getUser()) {
+            $address = $this->entityManager->getRepository(Address::class)->findOneBy(['user_id' =>$this->security->getUser()->getId()]);
+
+            return $this->render('shop/summary.html.twig', [
+                'shoppingCart' => $shoppingCart,
+                'address' => $address,
+            ]);
+
+        } else {
+
+            return $this->render('shop/notloggedin.html.twig');
+
+        }
     }
 
     // route for the ordered
     #[Route('/shop/ordered', name: 'app_shop_ordered')]
     public function ordered(EntityManagerInterface $entityManager): Response
     {
-        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' =>$this->security->getUser()->getId(), 'state' => 'ordered']);
-        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['userId' =>$this->security->getUser()->getId()]);
+        $this->changeState("ordered");
+
+        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' =>$this->security->getUser()->getId(), 'state' => 'ordered']);
+        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['user_id' =>$this->security->getUser()->getId()]);
 
         return $this->render('shop/ordered.html.twig', [
             'shoppingCart' => $shoppingCart,
             'address' => $address,
         ]);
     }
-
-
-
-    // Route for listing all products
-    #[Route('/shop/products', name: 'app_shop_products')]
-    public function products(EntityManagerInterface $entityManager): Response
-    {
-        $products = $this->entityManager->getRepository(Product::class)->findAll();
-
-        return $this->render('shop/products.html.twig', [
-            'products' => $products,
-        ]);
-    }
-
 
     // get shopping cart
     public function getShoppingCart(): ShoppingCart
@@ -238,7 +249,7 @@ class ShopController extends AbstractController
             }
 
         } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' =>$this->security->getUser()->getId()]);
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
         }
         return $shoppingCart;
 
@@ -265,14 +276,30 @@ class ShopController extends AbstractController
 
 
         } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['userId' =>$this->security->getUser()->getId()]);
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' =>$this->security->getUser()->getId()]);
         }
         return $shoppingCartProducts;
 
     }    
 
 
+    function changeState($transition)
+    {
+        $workflow = $this->workflowRegistry->get($this->getShoppingCart(), 'checkout_process');
+        $marking = $workflow->getMarking($this->getShoppingCart());
+        $currentState = array_keys($marking->getPlaces())[0];
 
+        $this->addFlash('success', $currentState . ' -> ' . $transition); 
+
+        // if ($currentState != $transition) {
+            try {          
+                $this->workflow->apply($this->getShoppingCart(), 'to_' . $transition);
+            } catch (TransitionException $e) {
+                $this->addFlash('error', $e->getMessage()); 
+                return $this->redirectToRoute('app_shop');
+            }
+        // }
+    }
     #[Route('/shop/fill', name: 'fillshop')]
     public function fill(EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
     {
@@ -334,7 +361,7 @@ class ShopController extends AbstractController
          */
 
         $shoppingCart = new ShoppingCart();
-        $shoppingCart->setUser($user->getId());
+        $shoppingCart->setUserId($user->getId());
         $shoppingCart->setState("shopping");
         $this->entityManager->persist($shoppingCart);
         // Country
@@ -380,8 +407,8 @@ class ShopController extends AbstractController
          */
 
         $address = new Address();
-        $address->setUser($user->getId());
-        $address->setCountry($germany->getId());
+        $address->setUserId($user->getId());
+        $address->setCountryId($germany->getId());
         $address->setStreet("Teststraße 1");
         $address->setZip("1234");
         

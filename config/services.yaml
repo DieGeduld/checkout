@@ -25,10 +25,12 @@ services:
             - { name: 'kernel.event_subscriber' }
 
     App\Controller\ShopController:
+      autowire: true
       arguments:
         $entityManager: '@doctrine.orm.entity_manager'
         $requestStack: '@request_stack'
         $security: '@Symfony\Bundle\SecurityBundle\Security'
+        $workflow: '@state_machine.checkout_process'
             
 
     # add more service definitions when explicit configuration is needed

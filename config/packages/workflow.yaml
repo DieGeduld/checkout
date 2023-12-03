@@ -22,7 +22,7 @@ framework:
             from: shopping_cart
             to: shopping
         to_shopping_cart:
-            from: delivery_address
+            from: shopping
             to: shopping_cart
         to_delivery_address:
             from: shopping_cart

@@ -12,30 +12,33 @@
     <h1>ShoppingCart</h1>
 
 
-                <table width="100%">
-                    <tr>
-                        <th>Produkt</th>
-                        <th>Preis</th>
-                        <th>Anzahl</th>
-                        <th>Gesamt</th>
-                        <th></th>
+        <table width="100%">
+            <tr>
+                <th>Produkt</th>
+                <th>Preis</th>
+                <th>Anzahl</th>
+                <th>Gesamt</th>
+                <th></th>
 
-                    </tr>
+            </tr>
 
-                    {% for item in shoppingcart %}
-                        <tr>
-                            <td>{{ item.name }}</td>
-                            <td>{{ item.price }}</td>
-                            <td>{{ item.quantity }}</td>
-                            <td>{{ item.price * item.quantity }}</td>
-                                
-                            <td><a href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
-                            <td><a href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
-                            <td><a href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
+            {% for item in shoppingcart %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.price }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.price * item.quantity }}</td>
+                        
+                    <td><a href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
+                    <td><a href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
+                    <td><a href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
 
-                        </tr>
-                    {% endfor %}
-                </table>
+                </tr>
+            {% endfor %}
+        </table>
+        <br>
+
+        <a href="{{ path('app_shop_summary') }}">Zur Zusammenfassung</a>
 
 </div>
 {% endblock %}

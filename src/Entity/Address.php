@@ -14,7 +14,7 @@ class Address
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'addresses')]
-    private ?User $user = null;
+    private ?User $user_id = null;
 
     #[ORM\Column(length: 255)]
     private ?string $street = null;
@@ -26,21 +26,21 @@ class Address
     private ?string $zip = null;
 
     #[ORM\ManyToOne(inversedBy: 'addresses')]
-    private ?Country $country = null;
+    private ?Country $country_id = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getUser(): ?User
+    public function getUserId(): ?User
     {
-        return $this->user;
+        return $this->user_id;
     }
 
-    public function setUser(?User $user): static
+    public function setUserId(?User $user_id): static
     {
-        $this->user = $user;
+        $this->user_id = $user_id;
 
         return $this;
     }
@@ -81,14 +81,14 @@ class Address
         return $this;
     }
 
-    public function getCountry(): ?Country
+    public function getCountryId(): ?Country
     {
-        return $this->country;
+        return $this->country_id;
     }
 
-    public function setCountry(?Country $country): static
+    public function setCountryId(?Country $country_id): static
     {
-        $this->country = $country;
+        $this->country_id = $country_id;
 
         return $this;
     }
