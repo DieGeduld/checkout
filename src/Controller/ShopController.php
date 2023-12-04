@@ -43,9 +43,8 @@ class ShopController extends AbstractController
 
     #[Route('/shop', name: 'app_shop')]
     public function index(): Response
-    {
+    { 
         $this->changeState("shopping");
-
         // Get all Products
         $products = $this->entityManager->getRepository(Product::class)->findAll();
 
@@ -79,6 +78,7 @@ class ShopController extends AbstractController
                 $shoppingCartProduct->setProduct($product);
                 $shoppingCartProduct->setQuantity($quantity);
                 $this->entityManager->persist($shoppingCartProduct);
+                $this->addFlash('success', "Added \"" . $product->getName() . "\" to shopping cart");
             } else {
 
                 if ($shoppingCartProduct->getQuantity() + $quantity <= 0) {
@@ -86,18 +86,24 @@ class ShopController extends AbstractController
                     var_dump($shoppingCartProduct->getQuantity() );
                     var_dump($quantity);
                     var_dump($shoppingCartProduct->getQuantity() + $quantity);
+                    $this->addFlash('success', "Removed \"" . $product->getName() . "\" from shopping cart");
                     $this->entityManager->remove($shoppingCartProduct);
                 } else {
                     echo "start2";
                     var_dump($shoppingCartProduct->getQuantity());
                     var_dump($quantity);
                     var_dump($shoppingCartProduct->getQuantity() + $quantity);
+                    if ($quantity < 0) {
+                        $this->addFlash('success', "Removed " . abs($quantity)  . "x \"" . $product->getName() . "\" from shopping cart");
+                    } else if ($quantity > 0) {
+                        $this->addFlash('success', "Added " . abs($quantity) . "x \"" . $product->getName() . "\" to shopping cart");
+                    }
                     $shoppingCartProduct->setQuantity($shoppingCartProduct->getQuantity() + $quantity);
                 }
 
             }
-
             $this->entityManager->flush();
+            
         }
 
         // return from where you came
@@ -185,11 +191,26 @@ class ShopController extends AbstractController
     #[Route('/shop/deliveryaddress', name: 'app_shop_deliveryaddress')]
     public function deliveryaddress(EntityManagerInterface $entityManager): Response
     {
-        $addresses = $this->entityManager->getRepository(Address::class)->findBy(['user_id' => $this->security->getUser()->getId() ]);
 
-        return $this->render('shop/deliveryaddress.html.twig', [
-            'addresses' => $addresses,
-        ]);
+
+
+        if ($this->security->getUser()) {
+            $addresses = $this->entityManager->getRepository(Address::class)->findBy(['user_id' => $this->security->getUser()->getId() ]);
+
+            return $this->render('shop/deliveryaddress.html.twig', [
+                'addresses' => $addresses,
+            ]);
+
+        } else {
+
+            return $this->render('shop/notloggedin.html.twig');
+
+        }
+
+
+
+
+    
     }
 
     // route for the summary
@@ -237,9 +258,9 @@ class ShopController extends AbstractController
         if ($this->getUser() == null) {
             $request = $this->requestStack->getCurrentRequest();
             $sessionId = $request->getSession()->getId();
-
+    
             $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
-
+    
             if ($shoppingCart == null) {
                 $shoppingCart = new ShoppingCart();
                 $shoppingCart->setSessionId($sessionId);
@@ -247,13 +268,12 @@ class ShopController extends AbstractController
                 $this->entityManager->persist($shoppingCart);
                 $this->entityManager->flush();
             }
-
+    
         } else {
             $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
         }
         return $shoppingCart;
-
-    }    
+    }
     // get shopping cart
     
     public function getShoppingCartProducts(): Array
@@ -288,18 +308,28 @@ class ShopController extends AbstractController
         $workflow = $this->workflowRegistry->get($this->getShoppingCart(), 'checkout_process');
         $marking = $workflow->getMarking($this->getShoppingCart());
         $currentState = array_keys($marking->getPlaces())[0];
-
+    
         $this->addFlash('success', $currentState . ' -> ' . $transition); 
-
-        // if ($currentState != $transition) {
+    
+        if ($currentState != $transition) {
             try {          
-                $this->workflow->apply($this->getShoppingCart(), 'to_' . $transition);
+                $workflow->apply($this->getShoppingCart(), 'to_' . $transition);
+                $this->entityManager->persist($this->getShoppingCart());
+                $this->entityManager->flush();
             } catch (TransitionException $e) {
                 $this->addFlash('error', $e->getMessage()); 
                 return $this->redirectToRoute('app_shop');
             }
-        // }
+        }
+    
+        // Recheck the state and add a success message if needed
+        $newMarking = $workflow->getMarking($this->getShoppingCart());
+        $newState = array_keys($newMarking->getPlaces())[0];
+        if ($newState !== $currentState) {
+            $this->addFlash('success', "State changed to: " . $newState); 
+        }
     }
+    
     #[Route('/shop/fill', name: 'fillshop')]
     public function fill(EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
     {
@@ -312,13 +342,13 @@ class ShopController extends AbstractController
         $platform = $connection->getDatabasePlatform();
         $connection->executeStatement($platform->getTruncateTableSQL('product', true));
         $connection->executeStatement($platform->getTruncateTableSQL('shopping_cart', true));
+        $connection->executeStatement($platform->getTruncateTableSQL('shopping_cart_product', true));
         $connection->executeStatement($platform->getTruncateTableSQL('user', true));
         $connection->executeStatement($platform->getTruncateTableSQL('country', true));
         $connection->executeStatement($platform->getTruncateTableSQL('address', true));
 
 
         // reset autoincrement
-
         $connection->executeStatement("DELETE FROM sqlite_sequence WHERE name='product';");
         $connection->executeStatement("DELETE FROM sqlite_sequence WHERE name='shopping_cart';");
         $connection->executeStatement("DELETE FROM sqlite_sequence WHERE name='user';");

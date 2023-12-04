@@ -41,7 +41,7 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             KernelEvents::REQUEST => [
                 ['onKernelRequest', 10]
             ],
-            'workflow.checkout_process.to_shopping_cart' => 'onTransitionToShoppingCart',
+            // 'workflow.checkout_process.to_shopping_cart' => 'onTransitionToShoppingCart',
             // 'workflow.checkout_process.to_shopping_cart' => ['onTransitionToShoppingCart'],
         ];
     }
@@ -55,20 +55,15 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             return;
         }
 
-
         var_dump($routeName);
         
         // get current user
         $user = $this->security->getUser();
 
-        
-
         // immer den aktuellen Warenkorb mitgeben:
-
         if ($user === null) {
             
             $sessionId = $request->getSession()->getId();
-
             
             // get shopping cart by session id
             $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
@@ -111,7 +106,7 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             'p.price * scp.quantity AS sum'
         ])
         ->from(ShoppingCartProduct::class, 'scp')
-        ->join('scp.product', 'p');       
+        ->join('scp.product', 'p');
     
         $products = $queryBuilder->getQuery()->getResult();
         $this->twig->addGlobal('shoppingcart', $products);

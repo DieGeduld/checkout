@@ -6,10 +6,15 @@
  */
 
 // any CSS you import will output into a single css file (app.css in this case)
-import './styles/app.css';
-//import bootstrap
+// import './styles/app.css';
+// import bootstrap
+
 const $ = require('jquery');
+require('bootstrap');
+
+require('./styles/app.scss');
 require('bootstrap/dist/css/bootstrap.min.css');
+
 
 $(function () {
 
