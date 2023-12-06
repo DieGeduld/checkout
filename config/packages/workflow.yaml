@@ -19,17 +19,17 @@ framework:
         - ordered
       transitions:
         to_shopping:
-            from: shopping_cart
+            from: [shopping, shopping_cart, delivery_address, summary, ordered]
             to: shopping
         to_shopping_cart:
-            from: shopping
+            from: [shopping, shopping_cart, delivery_address, summary, ordered]
             to: shopping_cart
         to_delivery_address:
-            from: shopping_cart
+            from: [shopping_cart, delivery_address]
             to: delivery_address
         to_summary:
-            from: delivery_address
+            from: [delivery_address, summary]
             to: summary
         to_ordered:
-            from: summary
+            from: [summary, ordered]
             to: ordered

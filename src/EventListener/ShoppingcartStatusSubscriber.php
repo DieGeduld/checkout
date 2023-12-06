@@ -91,7 +91,30 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             }
         }  
 
+
         
+        //NEW:
+        // if ($this->getUser() == null) {
+        //     $request = $this->requestStack->getCurrentRequest();
+        //     $sessionId = $request->getSession()->getId();
+
+        //     $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
+
+        //     if ($shoppingCart == null) {
+        //         $shoppingCart = new ShoppingCart();
+        //         $shoppingCart->setSessionId($sessionId);
+        //         $shoppingCart->setState("shopping");
+        //         $this->entityManager->persist($shoppingCart);
+        //         $this->entityManager->flush();
+        //     }
+
+        // } else {
+        //     $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
+        // }
+        // $shoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $shoppingCart->getId()]);    
+        // return $shoppingCartProducts;
+
+        // NEU ENDE:
         
 
         $queryBuilder = $this->entityManager->createQueryBuilder();

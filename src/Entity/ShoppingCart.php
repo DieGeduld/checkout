@@ -18,9 +18,6 @@ class ShoppingCart
     #[ORM\OneToOne(inversedBy: 'shoppingCart', cascade: ['persist', 'remove'])]
     private ?User $user_id = null;
 
-    #[ORM\OneToMany(mappedBy: 'shoppingcart', targetEntity: ShoppingCartProduct::class)]
-    private Collection $shoppingCartProducts;
-
     #[ORM\Column(length: 255)]
     private ?string $state = null;
 
@@ -69,21 +66,6 @@ class ShoppingCart
     public function setSessionId(?string $sessionId): self
     {
         $this->sessionId = $sessionId;
-
-        return $this;
-    }
-
-    public function getShoppingCartProducts(): Collection
-    {
-        return $this->shoppingCartProducts;
-    } 
-
-    public function addShoppingCartProduct(ShoppingCartProduct $shoppingCartProduct): static
-    {
-        if (!$this->shoppingCartProducts->contains($shoppingCartProduct)) {
-            $this->shoppingCartProducts[] = $shoppingCartProduct;
-            $shoppingCartProduct->setShoppingcart($this);
-        }
 
         return $this;
     }

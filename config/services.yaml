@@ -20,6 +20,11 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Service\ProductService:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $requestStack: '@request_stack'
+
     App\EventListener\ShoppingcartStatusSubscriber:
         tags: 
             - { name: 'kernel.event_subscriber' }
@@ -31,7 +36,7 @@ services:
         $requestStack: '@request_stack'
         $security: '@Symfony\Bundle\SecurityBundle\Security'
         $workflow: '@state_machine.checkout_process'
-            
-
+        $productService: '@App\Service\ProductService'
+        
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

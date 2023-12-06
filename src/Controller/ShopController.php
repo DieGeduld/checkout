@@ -16,6 +16,7 @@ use App\Entity\ShoppingCartProduct;
 use App\Entity\User;
 use App\Entity\Country;
 use App\Entity\Address;
+use App\Service\ProductService;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -31,14 +32,16 @@ class ShopController extends AbstractController
     private $security;
     private $workflow;
     private $workflowRegistry;
+    private $productService;
 
-    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security, Workflow $workflow, Registry $workflowRegistry)
+    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security, Workflow $workflow, Registry $workflowRegistry, ProductService $productService)
     {
         $this->entityManager = $entityManager;
         $this->requestStack = $requestStack;
         $this->security = $security;
         $this->workflow = $workflow;
         $this->workflowRegistry = $workflowRegistry;
+        $this->productService = $productService;
     }
 
     #[Route('/shop', name: 'app_shop')]
@@ -120,12 +123,10 @@ class ShopController extends AbstractController
     #[Route('/shop/shoppingcart', name: 'app_shop_shoppingcart')]
     public function shoppingcart(EntityManagerInterface $entityManager): Response
     {
-
         $this->changeState("shopping_cart");
 
         $shoppingCart = $this->getShoppingCart();
-
-        if ($shoppingCart->getShoppingCartProducts()->count() == 0) {
+        if (count($this->getShoppingCartProducts()) == 0) {
             return $this->redirectToRoute('app_shop');
         }
 
@@ -191,8 +192,7 @@ class ShopController extends AbstractController
     #[Route('/shop/deliveryaddress', name: 'app_shop_deliveryaddress')]
     public function deliveryaddress(EntityManagerInterface $entityManager): Response
     {
-
-
+        $this->changeState("delivery_address");
 
         if ($this->security->getUser()) {
             $addresses = $this->entityManager->getRepository(Address::class)->findBy(['user_id' => $this->security->getUser()->getId() ]);
@@ -292,12 +292,10 @@ class ShopController extends AbstractController
                 $this->entityManager->flush();
             }
 
-            $shoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $shoppingCart->getId()]);
-
-
         } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' =>$this->security->getUser()->getId()]);
+            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
         }
+        $shoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $shoppingCart->getId()]);    
         return $shoppingCartProducts;
 
     }    
