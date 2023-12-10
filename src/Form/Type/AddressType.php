@@ -14,6 +14,9 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use App\Entity\Country;
 use App\Entity\Address;
 
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
+
 class AddressType extends AbstractType
 {
     private $loggedin;
@@ -49,6 +52,12 @@ class AddressType extends AbstractType
             'choice_label' => 'name',
             'placeholder' => 'Wählen Sie ein Land',
             'attr' => ['class' => 'form-control'],
+            'choice_attr' => function($country) {
+                return $country->isEU() ? ['attr-isEu' => '1'] : ['attr-isEu' => '0'];
+            },
+        ])
+        ->add('taxNumber', TextType::class, [
+            'attr' => ['class' => 'form-control'],
         ])
         ->add('telephone', TextType::class, [
             'attr' => ['class' => 'form-control'],
@@ -59,7 +68,7 @@ class AddressType extends AbstractType
         ->add('submit', SubmitType::class, [
             'label'=> 'Weiter',
             'attr' => ['class' => 'form-control btn btn-primary btn-block'],
-        ]);        
+        ]);
     }
     public function configureOptions(OptionsResolver $resolver)
     {

@@ -18,8 +18,15 @@ require('bootstrap/dist/css/bootstrap.min.css');
 
 $(function () {
 
-    
-
-
+    function toggleTaxNumberField() {
+        var isEu = $('#address_country option:selected').attr('attr-iseu') === '1';
+        if (isEu) {
+            $('#address_taxNumber').closest('div').show();
+        } else {
+            $('#address_taxNumber').closest('div').hide();
+        }
+    }
+    $('#address_country').on('change', toggleTaxNumberField);
+    toggleTaxNumberField();
 
 }); 

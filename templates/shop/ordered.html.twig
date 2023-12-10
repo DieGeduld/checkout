@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello ShopController!{% endblock %}
+
+{% block body %}
+<div class="container">
+
+
+    <h1>Danke für Ihre Bestellung!</h1>
+
+    <p>
+        Ihre Bestellung wurde erfolgreich abgeschlossen.
+    </p>
+    
+    <h2>Bestellübersicht</h2>
+
+    <br>
+    {{ dump(order) }}
+    {{ dump(userData) }}
+    {{ dump(items) }}
+
+    
+    <a class="btn btn-primary" href="{{ path('app_shop') }}">&larr; Zurück zum Shop</a>
+
+</div>
+{% endblock %}

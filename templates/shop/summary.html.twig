@@ -8,9 +8,9 @@
 
     <h1>Summary</h1>
 
-    <div class="d-flex justify-content-between">
+    {# <div class="d-flex justify-content-between">
         <a class="btn btn-secondary" href="{{ path('app_shop_deliveryaddress') }}">&larr; Zurück zum Adressangabe</a>
-    </div>
+    </div> #}
     <br>
 
     <h2>Delivery Address</h2>
@@ -29,7 +29,8 @@
     {% include 'shop/editableShoppingCart.html.twig' %}
     <br>
 
-    <div class="d-flex justify-content-between">
+    <div class="d-flex justify-content-between align-items-start">
+        <a class="btn btn-secondary" href="{{ path('app_shop_deliveryaddress') }}">&larr; Zurück zum Adressangabe</a>
         <a class="btn btn-success btn-lg" href="{{ path('app_shop_ordered') }}">Jetzt Bestellen</a>
     </div>
 

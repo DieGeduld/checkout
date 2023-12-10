@@ -25,6 +25,7 @@ use Symfony\Component\Workflow\Exception\TransitionException;
 use Symfony\Component\Workflow\Registry;
 use App\Form\Type\AddressType;
 use Symfony\Component\HttpFoundation\Request;
+use App\Entity\Order;
 
 
 class ShopController extends AbstractController
@@ -264,11 +265,12 @@ class ShopController extends AbstractController
     public function deliveryaddress(EntityManagerInterface $entityManager, Request $request): Response
     {
 
+        
         $address = new Address();
         $form = $this->createForm(AddressType::class, $address);
 
         $form->handleRequest($request);
-
+        
         if ($form->isSubmitted() && $form->isValid()) {
 
             if ($this->security->getUser()) {
@@ -282,7 +284,7 @@ class ShopController extends AbstractController
 
                 $userData = [];
 
-                $fields = ['firstName', 'lastName', 'street', 'number', 'city', 'zip', 'country', 'telephone', 'email'];
+                $fields = ['firstName', 'lastName', 'street', 'number', 'city', 'zip', 'country', 'taxNumber', 'telephone', 'email'];
 
                 foreach ($fields as $field) {
                     $userData[$field] = $form->get($field)->getData();
@@ -295,7 +297,7 @@ class ShopController extends AbstractController
             }
         }
 
-
+    
         $this->changeState("delivery_address");
 
 
@@ -307,20 +309,21 @@ class ShopController extends AbstractController
         if ($userData) {
             
             // Setzen Sie die Eigenschaften des Address-Objekts basierend auf den Session-Daten
-            $address->setFirstName($userData['firstName'] ?? null);
-            $address->setLastName($userData['lastName'] ?? null);
-            $address->setStreet($userData['street'] ?? null);
-            $address->setNumber($userData['number'] ?? null);
-            $address->setCity($userData['city'] ?? null);
-            $address->setZip($userData['zip'] ?? null);
+            $address->setFirstName($userData['firstName'] ?? "");
+            $address->setLastName($userData['lastName'] ?? "");
+            $address->setStreet($userData['street'] ?? "");
+            $address->setNumber($userData['number'] ?? "");
+            $address->setCity($userData['city'] ?? "");
+            $address->setZip($userData['zip'] ?? "");
             
             if ($userData['country'] instanceof Country) {
                 $userData['country'] = $this->entityManager->merge($userData['country']);
             }
 
-            $address->setCountry($userData['country'] ?? null);
-            $address->setTelephone($userData['telephone'] ?? null);
-            $address->setEmail($userData['email'] ?? null);
+            $address->setCountry($userData['country'] ?? "");
+            $address->setTaxNumber($userData['taxNumber'] ?? "");
+            $address->setTelephone($userData['telephone'] ?? "");
+            $address->setEmail($userData['email'] ?? "");
         }
 
         $form = $this->createForm(AddressType::class, $address);
@@ -355,15 +358,15 @@ class ShopController extends AbstractController
         $shoppingCart = $this->getShoppingCart();
 
         if ($this->security->getUser()) {
-            $address = $this->entityManager->getRepository(Address::class)->findOneBy(['user_id' =>$this->security->getUser()->getId()]);
+            dd("currently not supported");
+            // $address = $this->entityManager->getRepository(Address::class)->findOneBy(['user_id' =>$this->security->getUser()->getId()]);
 
-            return $this->render('shop/summary.html.twig', [
-                'shoppingCart' => $shoppingCart,
-                'address' => $address,
-            ]);
+            // return $this->render('shop/summary.html.twig', [
+            //     'shoppingCart' => $shoppingCart,
+            //     'address' => $address,
+            // ]);
 
         } else {
-
 
             $session = $this->requestStack->getSession();
             $userData = $session->get('userData', []);
@@ -382,13 +385,54 @@ class ShopController extends AbstractController
     {
         $this->changeState("ordered");
 
-        $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' =>$this->security->getUser()->getId(), 'state' => 'ordered']);
-        $address = $this->entityManager->getRepository(Address::class)->findOneBy(['user_id' =>$this->security->getUser()->getId()]);
 
-        return $this->render('shop/ordered.html.twig', [
-            'shoppingCart' => $shoppingCart,
-            'address' => $address,
-        ]);
+        if ($this->security->getUser()) {
+                
+            dd("currently not supported");
+        } else {
+
+            $this->getShoppingCartProducts();
+
+            // save address to session
+            $request = $this->requestStack->getCurrentRequest();
+            $session = $this->requestStack->getSession();
+
+            $userData = $session->get('userData', []);
+
+            
+            $order = new Order();
+            $order->setUser(null);
+            
+            
+            // TODO: Write address to order, or separate 'address_order' table?
+            // $order->setAddressId($address->getId());
+            // $order->setTotal($this->getShoppingCart()->getTotal());
+            $order->setDate(new \DateTime());
+            $order->setStatus("ordered");
+            $this->entityManager->persist($order);
+            $this->entityManager->flush();
+            
+            
+            $session->set('order', $order);
+                        
+            return $this->render('shop/ordered.html.twig', [
+                'order' => $order,
+                'userData' => $userData,
+                'items' => $this->getShoppingCartProducts()
+            ]);
+        }
+
+
+
+        // $session = $this->requestStack->getSession();
+        // $userData = $session->get('userData', []);
+
+        // $orderedItems = [];
+
+        // return $this->render('shop/summary.html.twig', [
+        //     'orderedItems' => $orderedItems,
+        //     'userData' => $userData
+        // ]);
     }
 
     // get shopping cart
@@ -452,7 +496,7 @@ class ShopController extends AbstractController
                 $this->entityManager->persist($this->getShoppingCart());
                 $this->entityManager->flush();
             } catch (TransitionException $e) {
-                $this->addFlash('error', $e->getMessage()); 
+                $this->addFlash('error', "??" . $e->getMessage()); 
                 return $this->redirectToRoute('app_shop');
             }
         }
@@ -461,7 +505,13 @@ class ShopController extends AbstractController
         $newMarking = $workflow->getMarking($this->getShoppingCart());
         $newState = array_keys($newMarking->getPlaces())[0];
         if ($newState !== $currentState) {
+            $request = $this->requestStack->getCurrentRequest();
+            $referer = $request->headers->get('referer');
+            if ($referer === null) {
+                $referer = $this->generateUrl('app_shop');
+            }
             $this->addFlash('success', $currentState . ' -> ' . $transition); 
+            return $this->redirect($referer);
         }
     }
     

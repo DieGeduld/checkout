@@ -48,8 +48,7 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             KernelEvents::REQUEST => [
                 ['onKernelRequest', 5]
             ],
-            // 'workflow.checkout_process.to_shopping_cart' => 'onTransitionToShoppingCart',
-            // 'workflow.checkout_process.to_shopping_cart' => ['onTransitionToShoppingCart'],
+            'workflow.checkout_process.transition.to_shopping_cart' => ['onTransitionToShoppingCart'],
         ];
     }
 
@@ -61,6 +60,32 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
         if ($routeName === '_wdt') {
             return;
         }
+
+
+        switch ($routeName) {
+            case 'app_shop_shoppingcart':
+                
+
+
+                break;
+            case 'app_shop_deliveryaddress':
+                
+
+
+                break;
+            case 'app_shop_summary':
+                
+
+
+                break; 
+            case 'app_shop_ordered':
+                
+
+
+                break;
+            
+        }
+
 
         $accessToken = $this->tokenStorage->getToken();
 
@@ -83,7 +108,8 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
                 $this->entityManager->flush();
             }
 
-            var_dump("Nicht eingelogt: " . $shoppingCart->getId());
+            $this->twig->addGlobal('loggedin', false);
+
 
         } else {
 
@@ -99,10 +125,12 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
                 $shoppingCart->setState('shopping');
                 $this->entityManager->persist($shoppingCart);
                 $this->entityManager->flush();
-                var_dump("Neuer Warenkorb: " . $shoppingCart->getId());
             }
-            var_dump("Eingelogt: " . $shoppingCart->getId());
+
+            $this->twig->addGlobal('loggedin', true);
         }  
+
+
   
 
         $queryBuilder = $this->entityManager->createQueryBuilder();
@@ -140,9 +168,9 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
         
     }
 
-    public function onTransitionToShoppingCart(RequestEvent $requestEvent)
+    public function onTransitionToShoppingCart()
     {
-        dd("!!");
+        // dd("!yyyy!");
 
     }
 

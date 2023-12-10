@@ -46,6 +46,9 @@ class Address
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $lastName = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $taxNumber = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -201,6 +204,18 @@ class Address
     public function setLastName(string $lastName): static
     {
         $this->lastName = $lastName;
+
+        return $this;
+    }
+
+    public function getTaxNumber(): ?string
+    {
+        return $this->taxNumber;
+    }
+
+    public function setTaxNumber(string $taxNumber): static
+    {
+        $this->taxNumber = $taxNumber;
 
         return $this;
     }
