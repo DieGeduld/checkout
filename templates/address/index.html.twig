@@ -4,10 +4,10 @@
 
 {% block body %}
 <div class="container">
+<a href="{{ path('app_shop_deliveryaddress') }}">Zurück</a>
     <div class="row">
-        <div class="col-12">
+        <div class="col-6">
             <h1>Ihre Addressen</h1>
-
 
                 {{ form_start(form) }}
                 {{ form_widget(form) }}
@@ -18,6 +18,11 @@
                     <option value="{{ address.id }}">{{ address.street }} {{ address.number }}, {{ address.zip }}  {{ address.city }} ({{ address.country.iso }})</option>
                 {% endfor %}
             </select> #}
+
+        </div>
+        <div class="col-6">
+
+        <a href="{{ path('app_address_create') }}">Neue Adresse hinzufügen</a>
 
         </div>
     </div>

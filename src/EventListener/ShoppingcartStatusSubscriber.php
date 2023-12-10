@@ -96,7 +96,7 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             if ($shoppingCart === null) {
                 $shoppingCart = new ShoppingCart();
                 $shoppingCart->setUserId($user);
-                $shoppingCart->setState('shopping5');
+                $shoppingCart->setState('shopping');
                 $this->entityManager->persist($shoppingCart);
                 $this->entityManager->flush();
                 var_dump("Neuer Warenkorb: " . $shoppingCart->getId());

@@ -27,18 +27,21 @@ class AddressSelectType extends AbstractType
         $builder
         ->add('address', EntityType::class, [
             'class' => Address::class,
-            'choice_label' => 'street',
+            'choice_label' => function ($address, $key, $value) {
+                // Customize how the choice is displayed
+                return $address->getStreet() . ' ' . $address->getNumber() .  ', ' . $address->getCity() . ' ' . $address->getZip(); // Example
+            },
             'query_builder' => function (EntityRepository $er) use ($currentAddress) {
-                // Hier können Sie die Logik für die Abfrage definieren
                 $queryBuilder = $er->createQueryBuilder('a')
                     ->orderBy('a.street', 'ASC');
-
-                // Weitere Logik (falls erforderlich)
-
                 return $queryBuilder;
             },
             'data' => $currentAddress,
-        ]);
+        ])
+        ->add('submit', SubmitType::class, [
+            'label'=> 'Address wählen',
+            'attr' => ['class' => 'btn btn-primary btn-block'],
+        ]); 
 
     }
     public function configureOptions(OptionsResolver $resolver)

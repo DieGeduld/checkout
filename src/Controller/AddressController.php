@@ -29,7 +29,7 @@ class AddressController extends AbstractController
         $address = new Address(); // Create a new Address entity instance
 
         $user = $this->getUser(); 
-        
+
         $form = $this->createForm(AddressSelectType::class, null, [
             'current_address' => $user->getCurrentAddress(),
         ]);
@@ -38,8 +38,21 @@ class AddressController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // TOTO: unsauber!
+            $address = $form->getData()["address"];
 
-            dd($form->getData());
+            $user->setCurrentAddress($address);
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+            $this->addFlash('success', 'Adresse wurde erfolgreich ausgewählt');
+
+
+            ###ändern:
+            return $this->render('shop/deliveryaddress.html.twig', [
+                'currentAddress' => $address,
+                'form' => $form,
+            ]);
+        
 
 
         }
@@ -47,6 +60,8 @@ class AddressController extends AbstractController
             'controller_name' => 'AddressController',
             'form' => $form->createView(),
         ]);
+
+
 
     }
 

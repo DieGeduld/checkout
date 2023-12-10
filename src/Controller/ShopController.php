@@ -70,7 +70,7 @@ class ShopController extends AbstractController
     #[Route('/shop/updatecart/{id}', name:'app_shop_shoppingcart_update')]
     public function update(Product $product, Request $request): Response
     {
-        $quantity = $request->request->get('quantity');
+        $quantity = $request->request->get('quantity', 1);
 
         if ($quantity <= 0) {
             return $this->redirectToRoute('app_shop_shoppingcart');
@@ -100,10 +100,10 @@ class ShopController extends AbstractController
                     $this->addFlash('success', "Removed \"" . $product->getName() . "\" from shopping cart");
                     $this->entityManager->remove($shoppingCartProduct);
                 } else {
-                    if ($quantity < 0) {
-                        $this->addFlash('success', "Removed " . abs($quantity)  . "x \"" . $product->getName() . "\" from shopping cart");
-                    } else if ($quantity > 0) {
-                        $this->addFlash('success', "Added " . abs($quantity) . "x \"" . $product->getName() . "\" to shopping cart");
+                    if ($shoppingCartProduct->getQuantity() > $quantity) {
+                        $this->addFlash('success', "Removed " . abs($quantity - $shoppingCartProduct->getQuantity())  . "x \"" . $product->getName() . "\" from shopping cart");
+                    } else {
+                        $this->addFlash('success', "Added " . abs($shoppingCartProduct->getQuantity() - $quantity)  . "x \"" . $product->getName() . "\" from shopping cart");
                     }
 
                     $shoppingCartProduct->setQuantity($quantity);
@@ -184,14 +184,18 @@ class ShopController extends AbstractController
 
     // app_shop_shoppingcart_increase
     #[Route('/shop/shoppingcart/increase/{id}', name: 'app_shop_shoppingcart_increase')]
-    public function shoppingcart_increase(EntityManagerInterface $entityManager, int $id): Response
+    public function shoppingcart_increase(EntityManagerInterface $entityManager, Request $request, Product $product): Response
     {
-        // Get current amount
-        $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->find($id);
 
-        dd(''. $shoppingCartProduct->getName() .''. $shoppingCartProduct->getQuantity());
-
-        $this->addtocart($id, 1);
+        $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->findOneBy(['shoppingcart' => $this->shoppingCart->getId(), 'product' => $product]);    
+        if ($shoppingCartProduct) {
+            $currentQuantity = $shoppingCartProduct->getQuantity();
+            $request->request->set('quantity', $currentQuantity + 1);
+            $this->update($product, $request);
+        } else {
+            $request->request->set('quantity', 1);
+            $this->update($product, $request);
+        }
 
         // return from where you came
         $request = $this->requestStack->getCurrentRequest();
@@ -204,9 +208,20 @@ class ShopController extends AbstractController
 
     // app_shop_shoppingcart_decrease
     #[Route('/shop/shoppingcart/decrease/{id}', name: 'app_shop_shoppingcart_decrease')]
-    public function shoppingcart_decrease(int $id): Response
+    public function shoppingcart_decrease(EntityManagerInterface $entityManager, Request $request, Product $product): Response
     {
-        $this->addtocart($id, -1);
+        $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->findOneBy(['shoppingcart' => $this->shoppingCart->getId(), 'product' => $product]);    
+        if ($shoppingCartProduct) {
+            $currentQuantity = $shoppingCartProduct->getQuantity();
+            
+            if ($currentQuantity > 1) {
+                $request->request->set('quantity', $currentQuantity - 1);
+                $this->update($product, $request);
+            } else {
+                $this->entityManager->remove($shoppingCartProduct);
+                $this->entityManager->flush();
+            }
+        } 
 
         // return from where you came
         $request = $this->requestStack->getCurrentRequest();
@@ -228,8 +243,13 @@ class ShopController extends AbstractController
             'shoppingcart' => $shoppingCart, 
             'product' => $product
         ]);
-        $this->entityManager->remove($shoppingCartProduct);
-        $this->entityManager->flush();
+        if ($shoppingCartProduct) {
+            $this->entityManager->remove($shoppingCartProduct);
+            $this->entityManager->flush();
+            $this->addFlash('success','Removed "' . $product->getName() . '" from shopping cart');
+        } else {
+            $this->addFlash('success', $product->getName() . 'was allready removed from shopping cart');
+        }
         
         $request = $this->requestStack->getCurrentRequest();
         $referer = $request->headers->get('referer');
@@ -241,30 +261,88 @@ class ShopController extends AbstractController
 
     // route for the delivery address
     #[Route('/shop/deliveryaddress', name: 'app_shop_deliveryaddress')]
-    public function deliveryaddress(EntityManagerInterface $entityManager): Response
+    public function deliveryaddress(EntityManagerInterface $entityManager, Request $request): Response
     {
+
+        $address = new Address();
+        $form = $this->createForm(AddressType::class, $address);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            if ($this->security->getUser()) {
+                
+
+            } else {
+
+                // save address to session
+                $request = $this->requestStack->getCurrentRequest();
+                $session = $this->requestStack->getSession();
+
+                $userData = [];
+
+                $fields = ['firstName', 'lastName', 'street', 'number', 'city', 'zip', 'country', 'telephone', 'email'];
+
+                foreach ($fields as $field) {
+                    $userData[$field] = $form->get($field)->getData();
+                }
+
+                $session->set('userData', $userData);
+
+                return $this->redirectToRoute('app_shop_summary');
+
+            }
+        }
+
+
         $this->changeState("delivery_address");
 
-        // if ($this->security->getUser()) {
 
-            $address = new Address();
-            $form = $this->createForm(AddressType::class, $address);
+        $session = $this->requestStack->getSession();
+        $userData = $session->get('userData', []);
+
+        $address = new Address();
+
+        if ($userData) {
+            
+            // Setzen Sie die Eigenschaften des Address-Objekts basierend auf den Session-Daten
+            $address->setFirstName($userData['firstName'] ?? null);
+            $address->setLastName($userData['lastName'] ?? null);
+            $address->setStreet($userData['street'] ?? null);
+            $address->setNumber($userData['number'] ?? null);
+            $address->setCity($userData['city'] ?? null);
+            $address->setZip($userData['zip'] ?? null);
+            
+            if ($userData['country'] instanceof Country) {
+                $userData['country'] = $this->entityManager->merge($userData['country']);
+            }
+
+            $address->setCountry($userData['country'] ?? null);
+            $address->setTelephone($userData['telephone'] ?? null);
+            $address->setEmail($userData['email'] ?? null);
+        }
+
+        $form = $this->createForm(AddressType::class, $address);
+
+        if ($this->security->getUser()) {
+
+            $currentAddress = $this->security->getUser()->getCurrentAddress();
         
             return $this->render('shop/deliveryaddress.html.twig', [
+                'currentAddress' => $currentAddress,
                 'addresses' => $this->addresses,
                 'form' => $form,
             ]);
 
-        // } else {
+        } else {
 
-            // return $this->render('shop/notloggedin.html.twig');
-
-        // }
-
-
-
-
-    
+            return $this->render('shop/deliveryaddress.html.twig', [
+                'currentAddress' => null,
+                'form' => $form,
+            ]);
+        
+        }
     }
 
     // route for the summary
@@ -286,7 +364,14 @@ class ShopController extends AbstractController
 
         } else {
 
-            return $this->render('shop/notloggedin.html.twig');
+
+            $session = $this->requestStack->getSession();
+            $userData = $session->get('userData', []);
+
+            return $this->render('shop/summary.html.twig', [
+                'shoppingCart' => $shoppingCart,
+                'userData' => $userData
+            ]);
 
         }
     }

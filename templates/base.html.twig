@@ -54,9 +54,17 @@
 
             {% if app.request.get('_route') == 'app_shop' %}
                 <div class="app_shop_shoppingcart"> 
+                    {% if shoppingcart is not empty %}
+                    <div class="d-flex justify-content-end">
+                        <a class="" href="{{ path('app_shop_shoppingcart') }}">Zum Warenkorb &rarr;</a>
+                    </div>
+                    {% endif %}
+                    <h4>Schnellübersicht</h4>
                     {% include 'shop/editableShoppingCart.html.twig' %}
                     {% if shoppingcart is not empty %}
-                    <a href="{{ path('app_shop_shoppingcart') }}">Zum Checkout</a>
+                    <div class="d-flex justify-content-end">
+                        <a class=" btn btn-primary" href="{{ path('app_shop_shoppingcart') }}">Zum Warenkorb &rarr;</a>
+                    </div>
                     {% endif %}
                 </div>
             {% endif %}

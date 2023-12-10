@@ -6,50 +6,65 @@
 
 
 <div class="container">
+
+
     <h1>Adressangabe</h1>
+
+    <div class="d-flex justify-content-between">
+        <a class="btn btn-secondary" href="{{ path('app_shop') }}">&larr; Zurück zum Warenkorb</a>
+        {% if app.user and app.user.currentAddress %}
+            <a class="btn btn-primary" href="{{ path('app_shop_summary') }}">Weiter zur Übersicht &rarr;</a>
+        {% endif %}
+    </div>
+        <br>
+
+        <div class="d-flex justify-content-between">
+        </div>
 
     <!-- if user is logged in -->
     {% if app.user %}
-        <p>Angemeldet als: <strong>{{ app.user.firstname }} {{ app.user.lastname }}</strong></p>
-
-
-        {% if addresses is empty %}
+        {% if app.user.currentAddress is empty %}
             <p>Keine Adressen vorhanden, bitte eine neue Anlegen:</p>
             <a href="{{ path('app_address_create') }}">Neue Adresse anlegen</a>
         {% else %}
-            {% for address in addresses %}
-                <p>{{ address.street }} {{ address.number }}<br>
-                    {{ address.zip }} {{ address.city }}<br>
-                    {{ address.country }} {{address.country.iseu ? "(EU)" : "(nicht EU)"}}<br>
-                    Phone: {{ address.telephone }}<br>
-                    {{ address.email }}<br>            
-                </p>
-                 <a href="{{ path('app_address_edit', {'id': address.id}) }}">Adresse bearbeiten</a><br>
-                 <a href="{{ path('app_address', {'id': address.id}) }}">Andere Adresse wählen</a>
-            {% endfor %}
+            <h4>Ihre Aktuelle Adresse:</h4>
+            <p>{{ currentAddress.street }} {{ currentAddress.number }}<br>
+                {{ currentAddress.zip }} {{ currentAddress.city }}<br>
+                {{ currentAddress.country }} {{currentAddress.country.iseu ? "(EU)" : "(nicht EU)"}}<br>
+                Phone: {{ currentAddress.telephone }}<br>
+                {{ currentAddress.email }}<br>            
+            </p>
+                <a href="{{ path('app_address_edit', {'id': currentAddress.id}) }}">Adresse bearbeiten</a><br>
+                <a href="{{ path('app_address') }}">Andere Adresse wählen</a>
         {% endif %}
 
     {% else %}
         <div class="row">
-        <div class="col-md-12">
-            <h5>Sie sind nicht eingeloggt und haben 2 Möglichkeiten:</h5>
-        </div>
-        <div class="col-md-6">
-            <p class="font-weight-bold">Einloggen/Registerieren:</p>
-            <a href="{{ path('app_login') }}">Anmelden</a> oder
-            <a href="{{ path('app_register') }}">Registrieren</a>
-        </div>
-        <div class="col-md-6">
-            <p class="font-weight-bold">Als Gast bestellen:</p>
-            
-            {{ form_start(form) }}
-            {{ form_widget(form) }}
-            {{ form_end(form) }}
+            <div class="col-md-6">
+                <h4 class="font-weight-bold">Einloggen/Registerieren:</h4>
+                <a href="{{ path('app_login') }}">Anmelden</a> oder
+                <a href="{{ path('app_register') }}">Registrieren</a>
+            </div>
+            <div class="col-md-6">
+                <h4 class="font-weight-bold">Als Gast bestellen:</h4>
+                
+                {{ form_start(form) }}
+                {{ form_widget(form) }}
+                {{ form_end(form) }}
 
-        </div>
+            </div>
 
         </div>
     {% endif %}
+
+<br>
+<br><!-- TODO: eww. -->
+    <div class="d-flex justify-content-between">
+        <a class="btn btn-secondary" href="{{ path('app_shop') }}">&larr; Zurück zum Warenkorb</a>
+        {% if app.user and app.user.currentAddress %}
+            <a class="btn btn-primary" href="{{ path('app_shop_summary') }}">Weiter zur Übersicht &rarr;</a>
+        {% endif %}
+    </div>
 
 
 

@@ -3,7 +3,6 @@
     <p>Ihr Warenkorb ist leer</p>
 
 {% else %}
-    <h2>Ihr Warenkorb</h2>
     <table class="editableShoppingCart" width="100%">
         <tr>
             <th>Produkt</th>
@@ -17,8 +16,9 @@
             <tr>
                 <td>{{ item.name }}</td>
                 <td>{{ item.price|number_format(2, ',', '.') }} €</td>
-                <td>
-                    <form action="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}" method="post">
+                <td valign="center">
+                    <!-- busted! -->
+                    <form style="margin: 0" action="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}" method="post">
                         <input class="quantity" type="number" name="quantity" min="0" value="{{ item.quantity }}">
                         <input class="updateItem" type="submit" value="Update">
                     </form>
@@ -26,9 +26,9 @@
                     <a class="updateItem" href="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}">Update</a> #}
                 </td>
                 <td>{{ item.sum|number_format(2, ',', '.') }} €</td>
-                <td><a class="increaseItemAmout" href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
-                <td><a class="decreaseItemAmout" href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
-                <td><a class="removeItem" href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
+                <td width="20"><a class="btn btn-success py-0 px-2" title="Increase item amout" class="increaseItemAmout" href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
+                <td width="20"><a class="btn btn-warning py-0 px-2" title="decrease item aount" class="decreaseItemAmout" href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
+                <td width="20"><a class="btn btn-danger py-0 px-2" title="remove item" class="removeItem" href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
             </tr>
         {% endfor %}
     </table>

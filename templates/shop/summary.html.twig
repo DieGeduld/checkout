@@ -3,17 +3,35 @@
 {% block title %}Hello ShopController!{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+<div class="container">
 
-<div class="example-wrapper">
+
     <h1>Summary</h1>
 
+    <div class="d-flex justify-content-between">
+        <a class="btn btn-secondary" href="{{ path('app_shop_deliveryaddress') }}">&larr; Zurück zum Adressangabe</a>
+    </div>
+    <br>
+
+    <h2>Delivery Address</h2>
+    <!-- disgusting but works for now -->
+    <p>
+    {% if userData %}
+        {% for key, value in userData %}
+            <strong>{{ key|capitalize }}:</strong> {{ value }}<br>
+        {% endfor %}
+    {% else %}
+        Keine Benutzerdaten vorhanden.
+    {% endif %}
+    </p><br>
+
+    <h2>Items</h2>
     {% include 'shop/editableShoppingCart.html.twig' %}
     <br>
 
-    <a href="{{ path('app_shop_deliveryaddress') }}">Zur Addressangabe</a>
+    <div class="d-flex justify-content-between">
+        <a class="btn btn-success btn-lg" href="{{ path('app_shop_ordered') }}">Jetzt Bestellen</a>
+    </div>
+
 </div>
 {% endblock %}

@@ -8,18 +8,18 @@
     <h1>Unsere Produkte</h1>
         <div class="row">
             {% for product in products %}
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card">
-                    <img class="card-img-top" src="https://placehold.co/600x400" alt="Produktbild">
-                    <div class="card-body">
-                    <h5 class="card-title">{{ product.getName }}</h5>
-                    <p class="card-text">{{ product.getDescription }}</p>
-                    <a href="{{ path('app_product_show', {'id': product.getId}) }}" class="btn btn-secondary">Detail</a>
-                    <a href="{{ path('app_shop_addtocart', {'id': product.getId}) }}" class="btn btn-primary">In den Warenkorb</a>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card">
+                        <img class="card-img-top" src="https://placehold.co/600x400" alt="Produktbild">
+                        <div class="card-body">
+                        <h5 class="card-title">{{ product.getName }}</h5>
+                        <p class="card-text">{{ product.getDescription }}</p>
+                        <a href="{{ path('app_product_show', {'id': product.getId}) }}" class="btn btn-secondary">Detail</a>
+                        <a href="{{ path('app_shop_addtocart', {'id': product.getId}) }}" class="btn btn-primary">In den Warenkorb</a>
+                        </div>
                     </div>
                 </div>
-            </div>
-                {% endfor %}
+            {% endfor %}
         </div>
     </div>
 </div>

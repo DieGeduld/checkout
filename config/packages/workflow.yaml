@@ -25,7 +25,7 @@ framework:
             from: [shopping, shopping_cart, delivery_address, summary, ordered]
             to: shopping_cart
         to_delivery_address:
-            from: [shopping_cart, delivery_address]
+            from: [summary, shopping_cart, delivery_address]
             to: delivery_address
         to_summary:
             from: [delivery_address, summary]
