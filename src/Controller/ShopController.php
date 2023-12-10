@@ -24,6 +24,8 @@ use Symfony\Component\Workflow\Workflow;
 use Symfony\Component\Workflow\Exception\TransitionException;
 use Symfony\Component\Workflow\Registry;
 use App\Form\Type\AddressType;
+use Symfony\Component\HttpFoundation\Request;
+
 
 class ShopController extends AbstractController
 {
@@ -65,16 +67,15 @@ class ShopController extends AbstractController
 
     }
 
-
-    #[Route('/shop/updatecart/{id}/{$quantity}', name:'app_shop_shoppingcart_update')]
-
-
-    //add to cart
-    #[Route('/shop/addtocart/{id}/{$quantity}', name: 'app_shop_addtocart')]
-    public function addtocart(int $id, int $quantity = 1): Response
+    #[Route('/shop/updatecart/{id}', name:'app_shop_shoppingcart_update')]
+    public function update(Product $product, Request $request): Response
     {
-        $product = $this->entityManager->getRepository(Product::class)->find($id);
-    
+        $quantity = $request->request->get('quantity');
+
+        if ($quantity <= 0) {
+            return $this->redirectToRoute('app_shop_shoppingcart');
+        }
+
         if ($product && $this->shoppingCart) {
 
             // getting ShoppingCartProduct
@@ -96,29 +97,63 @@ class ShopController extends AbstractController
             } else {
 
                 if ($shoppingCartProduct->getQuantity() + $quantity <= 0) {
-                    echo "start";
-                    var_dump($shoppingCartProduct->getQuantity() );
-                    var_dump($quantity);
-                    var_dump($shoppingCartProduct->getQuantity() + $quantity);
                     $this->addFlash('success', "Removed \"" . $product->getName() . "\" from shopping cart");
                     $this->entityManager->remove($shoppingCartProduct);
                 } else {
-                    echo "start2";
-                    var_dump($shoppingCartProduct->getQuantity());
-                    var_dump($quantity);
-                    var_dump($shoppingCartProduct->getQuantity() + $quantity);
                     if ($quantity < 0) {
                         $this->addFlash('success', "Removed " . abs($quantity)  . "x \"" . $product->getName() . "\" from shopping cart");
                     } else if ($quantity > 0) {
                         $this->addFlash('success', "Added " . abs($quantity) . "x \"" . $product->getName() . "\" to shopping cart");
                     }
-                    $shoppingCartProduct->setQuantity($shoppingCartProduct->getQuantity() + $quantity);
+
+                    $shoppingCartProduct->setQuantity($quantity);
                 }
 
             }
             $this->entityManager->flush();
             
         }
+
+        // return from where you came
+        $request = $this->requestStack->getCurrentRequest();
+        $referer = $request->headers->get('referer');
+        if ($referer === null) {
+            $referer = $this->generateUrl('app_shop');
+        }
+        return $this->redirect($referer);
+
+    }
+
+
+    //add to cart
+    #[Route('/shop/addtocart/{id}', name: 'app_shop_addtocart')]
+    public function addtocart(Product $product, Request $request): Response
+    {
+        $quantity = $request->query->get('quantity', 1);
+
+        if ($quantity <= 0) {
+            return $this->redirectToRoute('app_shop_shoppingcart');
+        }
+
+        $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->findOneBy([
+            'shoppingcart' => $this->shoppingCart, 
+            'product' => $product
+        ]);
+
+        if ($shoppingCartProduct == null) {
+            $shoppingCartProduct = new ShoppingCartProduct();
+            $shoppingCartProduct->setShoppingcart($this->shoppingCart);
+            $shoppingCartProduct->setProduct($product);
+            $shoppingCartProduct->setQuantity($quantity);
+            $this->entityManager->persist($shoppingCartProduct);
+            $this->addFlash('success', "Added \"" . $product->getName() . "\" to shopping cart");
+        } else {
+            $this->addFlash('success', "Added " . abs($quantity) . "x \"" . $product->getName() . "\" to shopping cart");
+            $shoppingCartProduct->setQuantity($shoppingCartProduct->getQuantity() + $quantity);
+        }
+        $this->entityManager->flush();
+
+
 
         // return from where you came
         $request = $this->requestStack->getCurrentRequest();
