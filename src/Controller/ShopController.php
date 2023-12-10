@@ -23,7 +23,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Workflow\Workflow;
 use Symfony\Component\Workflow\Exception\TransitionException;
 use Symfony\Component\Workflow\Registry;
-
+use App\Form\Type\AddressType;
 
 class ShopController extends AbstractController
 {
@@ -33,6 +33,10 @@ class ShopController extends AbstractController
     private $workflow;
     private $workflowRegistry;
     private $productService;
+    private $shoppingCartProducts;
+    private $shoppingCart;
+    private $addresses;
+
 
     public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security, Workflow $workflow, Registry $workflowRegistry, ProductService $productService)
     {
@@ -42,6 +46,9 @@ class ShopController extends AbstractController
         $this->workflow = $workflow;
         $this->workflowRegistry = $workflowRegistry;
         $this->productService = $productService;
+        $this->shoppingCartProducts = $productService->getShoppingCartProducts();
+        $this->shoppingCart = $productService->getShoppingCart();
+        $this->addresses = $productService->getAddresses();
     }
 
     #[Route('/shop', name: 'app_shop')]
@@ -58,17 +65,21 @@ class ShopController extends AbstractController
 
     }
 
+
+    #[Route('/shop/updatecart/{id}/{$quantity}', name:'app_shop_shoppingcart_update')]
+
+
     //add to cart
-    #[Route('/shop/addtocart/{id}', name: 'app_shop_addtocart')]
+    #[Route('/shop/addtocart/{id}/{$quantity}', name: 'app_shop_addtocart')]
     public function addtocart(int $id, int $quantity = 1): Response
     {
         $product = $this->entityManager->getRepository(Product::class)->find($id);
-        $shoppingCart = $this->getShoppingCart();
     
-        if ($product && $shoppingCart) {
+        if ($product && $this->shoppingCart) {
+
             // getting ShoppingCartProduct
             $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->findOneBy([
-                'shoppingcart' => $shoppingCart, 
+                'shoppingcart' => $this->shoppingCart, 
                 'product' => $product
             ]);
 
@@ -77,7 +88,7 @@ class ShopController extends AbstractController
                     return $this->redirectToRoute('app_shop_shoppingcart');
                 }
                 $shoppingCartProduct = new ShoppingCartProduct();
-                $shoppingCartProduct->setShoppingcart($shoppingCart);
+                $shoppingCartProduct->setShoppingcart($this->shoppingCart);
                 $shoppingCartProduct->setProduct($product);
                 $shoppingCartProduct->setQuantity($quantity);
                 $this->entityManager->persist($shoppingCartProduct);
@@ -127,6 +138,7 @@ class ShopController extends AbstractController
 
         $shoppingCart = $this->getShoppingCart();
         if (count($this->getShoppingCartProducts()) == 0) {
+            $this->addFlash('error', "Your shopping cart is empty");
             return $this->redirectToRoute('app_shop');
         }
 
@@ -139,7 +151,11 @@ class ShopController extends AbstractController
     #[Route('/shop/shoppingcart/increase/{id}', name: 'app_shop_shoppingcart_increase')]
     public function shoppingcart_increase(EntityManagerInterface $entityManager, int $id): Response
     {
-        
+        // Get current amount
+        $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->find($id);
+
+        dd(''. $shoppingCartProduct->getName() .''. $shoppingCartProduct->getQuantity());
+
         $this->addtocart($id, 1);
 
         // return from where you came
@@ -194,18 +210,21 @@ class ShopController extends AbstractController
     {
         $this->changeState("delivery_address");
 
-        if ($this->security->getUser()) {
-            $addresses = $this->entityManager->getRepository(Address::class)->findBy(['user_id' => $this->security->getUser()->getId() ]);
+        // if ($this->security->getUser()) {
 
+            $address = new Address();
+            $form = $this->createForm(AddressType::class, $address);
+        
             return $this->render('shop/deliveryaddress.html.twig', [
-                'addresses' => $addresses,
+                'addresses' => $this->addresses,
+                'form' => $form,
             ]);
 
-        } else {
+        // } else {
 
-            return $this->render('shop/notloggedin.html.twig');
+            // return $this->render('shop/notloggedin.html.twig');
 
-        }
+        // }
 
 
 
@@ -307,8 +326,6 @@ class ShopController extends AbstractController
         $marking = $workflow->getMarking($this->getShoppingCart());
         $currentState = array_keys($marking->getPlaces())[0];
     
-        $this->addFlash('success', $currentState . ' -> ' . $transition); 
-    
         if ($currentState != $transition) {
             try {          
                 $workflow->apply($this->getShoppingCart(), 'to_' . $transition);
@@ -324,7 +341,7 @@ class ShopController extends AbstractController
         $newMarking = $workflow->getMarking($this->getShoppingCart());
         $newState = array_keys($newMarking->getPlaces())[0];
         if ($newState !== $currentState) {
-            $this->addFlash('success', "State changed to: " . $newState); 
+            $this->addFlash('success', $currentState . ' -> ' . $transition); 
         }
     }
     

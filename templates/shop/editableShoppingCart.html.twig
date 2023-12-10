@@ -1,23 +1,34 @@
- <table class="editableShoppingCart" width="100%">
-    <tr>
-        <th>Produkt</th>
-        <th>Preis</th>
-        <th>Anzahl</th>
-        <th>Gesamt</th>
-        <th></th>
+{% if shoppingcart is empty %}
+    
+    <p>Ihr Warenkorb ist leer</p>
 
-    </tr>
-
-    {% for item in shoppingcart %}
+{% else %}
+    <h2>Ihr Warenkorb</h2>
+    <table class="editableShoppingCart" width="100%">
         <tr>
-            <td>{{ item.name }}</td>
-            <td>{{ item.price|number_format(2, ',', '.') }} €</td>
-            <td><input type="text" value="{{ item.quantity }}"></td>
-            <td>{{ item.sum|number_format(2, ',', '.') }} €</td>
-            <td><a href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
-            <td><a href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
-            <td><a href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
+            <th>Produkt</th>
+            <th>Preis</th>
+            <th>Anzahl</th>
+            <th>Gesamt</th>
+            <th></th>
 
         </tr>
-    {% endfor %}
-</table>
+
+        {% for item in shoppingcart %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.price|number_format(2, ',', '.') }} €</td>
+                <td><input class="quantity" type="number" value="{{ item.quantity }}"><a class="updateItem" href="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}">Update</a></td>
+                <td>{{ item.sum|number_format(2, ',', '.') }} €</td>
+                <td><a class="increaseItemAmout" href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
+                <td><a class="decreaseItemAmout" href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
+                <td><a class="removeItem" href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
+
+            </tr>
+        {% endfor %}
+    </table>
+    <div class="total">
+        <p>Gesamt: {{ shoppingcartsum|number_format(2, ',', '.') }} €</p>
+    </div>
+
+{% endif %}

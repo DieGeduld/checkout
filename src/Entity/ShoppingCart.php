@@ -24,11 +24,6 @@ class ShoppingCart
     #[ORM\Column(type: "string", length: 255, nullable: true)]
     private $sessionId;
 
-    public function __construct()
-    {
-        $this->shoppingCartProducts = new ArrayCollection();
-    }
-
     public function getId(): ?int
     {
         return $this->id;

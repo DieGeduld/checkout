@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Product;
 use App\Entity\ShoppingCart;
 use App\Entity\ShoppingCartProduct;
+use App\Service\ProductService;
 use Twig\Environment as TwigEnvironment;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -17,6 +18,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Workflow\Workflow;
 use Symfony\Component\Workflow\Event\WorkflowEvent;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+//TokenStorage
 
 class ShoppingcartStatusSubscriber implements EventSubscriberInterface
 {
@@ -25,13 +28,17 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
     private $twig;
     private $router;
     private $workflow;
+    private $tokenStorage;
+    
 
 
-    public function __construct(Security $security, EntityManagerInterface $entityManager, TwigEnvironment $twig)
+    public function __construct(Security $security, EntityManagerInterface $entityManager, TwigEnvironment $twig, TokenStorageInterface $tokenStorage)
     {
         $this->security = $security;
         $this->entityManager = $entityManager;
         $this->twig = $twig;
+        $this->tokenStorage = $tokenStorage;
+
     }
 
 
@@ -39,7 +46,7 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
     {
         return [
             KernelEvents::REQUEST => [
-                ['onKernelRequest', 10]
+                ['onKernelRequest', 5]
             ],
             // 'workflow.checkout_process.to_shopping_cart' => 'onTransitionToShoppingCart',
             // 'workflow.checkout_process.to_shopping_cart' => ['onTransitionToShoppingCart'],
@@ -55,13 +62,12 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             return;
         }
 
-        var_dump($routeName);
-        
+        $accessToken = $this->tokenStorage->getToken();
+
         // get current user
-        $user = $this->security->getUser();
 
         // immer den aktuellen Warenkorb mitgeben:
-        if ($user === null) {
+        if ($accessToken === null) {
             
             $sessionId = $request->getSession()->getId();
             
@@ -76,7 +82,12 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
                 $this->entityManager->persist($shoppingCart);
                 $this->entityManager->flush();
             }
+
+            var_dump("Nicht eingelogt: " . $shoppingCart->getId());
+
         } else {
+
+            $user = $accessToken->getUser();
 
             // Wenn der User eingeloggt ist
             $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId() ]);
@@ -85,54 +96,47 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
             if ($shoppingCart === null) {
                 $shoppingCart = new ShoppingCart();
                 $shoppingCart->setUserId($user);
-                $shoppingCart->setState('shopping');
+                $shoppingCart->setState('shopping5');
                 $this->entityManager->persist($shoppingCart);
                 $this->entityManager->flush();
+                var_dump("Neuer Warenkorb: " . $shoppingCart->getId());
             }
+            var_dump("Eingelogt: " . $shoppingCart->getId());
         }  
-
-
-        
-        //NEW:
-        // if ($this->getUser() == null) {
-        //     $request = $this->requestStack->getCurrentRequest();
-        //     $sessionId = $request->getSession()->getId();
-
-        //     $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
-
-        //     if ($shoppingCart == null) {
-        //         $shoppingCart = new ShoppingCart();
-        //         $shoppingCart->setSessionId($sessionId);
-        //         $shoppingCart->setState("shopping");
-        //         $this->entityManager->persist($shoppingCart);
-        //         $this->entityManager->flush();
-        //     }
-
-        // } else {
-        //     $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
-        // }
-        // $shoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $shoppingCart->getId()]);    
-        // return $shoppingCartProducts;
-
-        // NEU ENDE:
-        
+  
 
         $queryBuilder = $this->entityManager->createQueryBuilder();
 
         $queryBuilder->select([
             'p.id AS id', 
             'scp.quantity AS quantity', 
-            // 'p.id AS product_id', 
             'p.name AS name', 
             'p.price AS price', 
             'p.price AS product_price',
             'p.price * scp.quantity AS sum'
         ])
         ->from(ShoppingCartProduct::class, 'scp')
-        ->join('scp.product', 'p');
+        ->where('scp.shoppingcart = :shoppingcart')
+        ->join('scp.product', 'p')
+        ->setParameter('shoppingcart', $shoppingCart->getId());
     
         $products = $queryBuilder->getQuery()->getResult();
-        $this->twig->addGlobal('shoppingcart', $products);
+
+        /////
+
+        $queryBuilder = $this->entityManager->createQueryBuilder();
+        $queryBuilder->select([
+            'SUM(p.price * scp.quantity) AS sum'
+        ])
+        ->from(ShoppingCartProduct::class, 'scp')
+        ->where('scp.shoppingcart = :shoppingcart')
+        ->join('scp.product', 'p')
+        ->setParameter('shoppingcart', $shoppingCart->getId());
+
+        $sum = $queryBuilder->getQuery()->getResult();
+
+        $this->twig->addGlobal('shoppingcart', $products);        
+        $this->twig->addGlobal('shoppingcartsum', $sum[0]["sum"]);        
         
     }
 

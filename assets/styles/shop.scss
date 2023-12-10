@@ -1,3 +1,10 @@
+[aria-label="breadcrumb"] {
+    padding: 10px;
+    .breadcrumb {
+        margin: 0;
+    }
+}
+
 .app_shop_shoppingcart {
     background-color: #FFFFFF;
     border: 1px solid #CCCCCC;
@@ -5,11 +12,22 @@
     box-shadow: 0 0 5px #CCCCCC;
     margin: 20px auto;
     padding: 20px;
-    width: 600px;
 }
 
-
-.editableShoppingCart {
-        border: 1px solid #CCCCCC;
-        padding: 50px;
+table.editableShoppingCart {
+    // border: 1px solid #CCCCCC;
+    padding: 50px;
+    margin-bottom: 20px;
+    .increaseItemAmout, .decreaseItemAmout, .removeItem {
+        text-decoration: none;
+    }
+    .quantity {
+        text-align: center;
+    }
 } 
+
+.navbar {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+

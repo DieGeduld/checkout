@@ -16,21 +16,25 @@
 
         <!--- bootstrap navbar -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="{{ path('app_shop') }}">Shop</a>
+            <div class="container">
+                <a class="navbar-brand" href="{{ path('app_shop') }}">Shop</a>
 
-            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
 
-                <div class="navbar-nav">
-                    <a class="nav-item nav-link active" href="{{ path('app_home') }}">Home</a>
-                    <a class="nav-item nav-link" href="{{ path('app_shop') }}">Shop</a>
-                    <a class="nav-item nav-link" href="{{ path('app_shop_shoppingcart') }}">Warenkorb ({{ shoppingcart|length }})</a>
+                    <div class="navbar-nav">
+                        <a class="nav-item nav-link active" href="{{ path('app_home') }}">Home</a>
+                        <a class="nav-item nav-link" href="{{ path('app_shop') }}">Shop</a>
+                        <a class="nav-item nav-link" href="{{ path('app_shop_shoppingcart') }}">Warenkorb ({{ shoppingcart|length }})</a>
+                    </div>
                 </div>
+                {% if app.user %}
+                    
+
+                    {{ app.user.firstname }}&nbsp;<a href="{{ path('app_logout') }}"> Logout</a>
+                {% else %}
+                    <a href="{{ path('app_login') }}">Login</a>
+                {% endif %}
             </div>
-            {% if app.user %}
-                <a href="{{ path('app_logout') }}">Logout</a>
-            {% else %}
-                <a href="{{ path('app_login') }}">Login</a>
-            {% endif %}
         </nav>
 
         <!-- flash -->
@@ -45,45 +49,21 @@
                 {{ flashMessage }}
             </div>
         {% endfor %}
-    
-        {% if app.request.get('_route') == 'app_shop' %}
-        <div class="app_shop_shoppingcart">
 
-            {% if shoppingcart is empty %}
-                <p>Ihr Warenkorb ist leer</p>
-            {% else %}
-            
-                <table width="100%">
-                    <tr>
-                        <th>Produkt</th>
-                        <th>Preis</th>
-                        <th>Anzahl</th>
-                        <th>Gesamt</th>
-                        <th></th>
+        <div class="container">
 
-                    </tr>
-
-                    {% for item in shoppingcart %}
-                        <tr>
-                            <td>{{ item.name }}</td>
-                            <td>{{ item.price }}</td>
-                            <td>{{ item.quantity }}</td>
-                            <td>{{ item.price * item.quantity }}</td>
-                                
-                            <td><a href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
-                            <td><a href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
-                            <td><a href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
-
-                        </tr>
-                    {% endfor %}
-                </table>
-                <br>
-                <a href="{{ path('app_shop_shoppingcart') }}">Zum Checkout</a>
+            {% if app.request.get('_route') == 'app_shop' %}
+                <div class="app_shop_shoppingcart"> 
+                    {% include 'shop/editableShoppingCart.html.twig' %}
+                    {% if shoppingcart is not empty %}
+                    <a href="{{ path('app_shop_shoppingcart') }}">Zum Checkout</a>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
-        {% endif %}
-            
-        {% block body %}{% endblock %}
+
+            {% block body %}{% endblock %}
+
         {{ encore_entry_script_tags('app') }}
     </body>
 </html>

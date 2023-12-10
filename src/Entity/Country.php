@@ -102,4 +102,11 @@ class Country
 
         return $this;
     }
+
+    // Wird verwendet, um die Entity in einem Formular als String darzustellen
+    public function __toString()
+    {
+        return $this->name;
+    }
+
 }

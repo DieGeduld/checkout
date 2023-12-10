@@ -28,6 +28,18 @@ class Address
     #[ORM\ManyToOne(inversedBy: 'addresses')]
     private ?Country $country_id = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $city = null;
+
+    #[ORM\Column(length: 255, nullable:true)]
+    private ?string $telephone = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $email = null;
+
+    #[ORM\OneToOne(mappedBy: 'currentAddress', cascade: ['persist', 'remove'])]
+    private ?User $user = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -81,6 +93,18 @@ class Address
         return $this;
     }
 
+    public function getCountry(): ?Country
+    {
+        return $this->country_id;
+    }
+
+    public function setCountry(?Country $country_id): static
+    {
+        $this->country_id = $country_id;
+
+        return $this;
+    }
+
     public function getCountryId(): ?Country
     {
         return $this->country_id;
@@ -89,6 +113,64 @@ class Address
     public function setCountryId(?Country $country_id): static
     {
         $this->country_id = $country_id;
+
+        return $this;
+    }
+
+    public function getCity(): ?string
+    {
+        return $this->city;
+    }
+
+    public function setCity(string $city): static
+    {
+        $this->city = $city;
+
+        return $this;
+    }
+
+    public function getTelephone(): ?string
+    {
+        return $this->telephone;
+    }
+
+    public function setTelephone(string $telephone): static
+    {
+        $this->telephone = $telephone;
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        // unset the owning side of the relation if necessary
+        if ($user === null && $this->user !== null) {
+            $this->user->setCurrentAddress(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($user !== null && $user->getCurrentAddress() !== $this) {
+            $user->setCurrentAddress($this);
+        }
+
+        $this->user = $user;
 
         return $this;
     }
