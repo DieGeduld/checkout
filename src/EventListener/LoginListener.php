@@ -22,6 +22,9 @@ class LoginListener
 
     public function onSecurityInteractiveLogin(InteractiveLoginEvent $event)
     {
+        // TODO: Copy Item from session to user
+        return;
+
         $session = $this->requestStack->getSession();
         $user = $event->getAuthenticationToken()->getUser();
 

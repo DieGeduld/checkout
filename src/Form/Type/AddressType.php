@@ -46,17 +46,31 @@ class AddressType extends AbstractType
         ])
         ->add('zip', TextType::class, [
             'attr' => ['class' => 'form-control'],
-        ])
-        ->add('country', EntityType::class, [
-            'class' => Country::class,
-            'choice_label' => 'name',
-            'placeholder' => 'Wählen Sie ein Land',
-            'attr' => ['class' => 'form-control'],
-            'choice_attr' => function($country) {
-                return $country->isEU() ? ['attr-isEu' => '1'] : ['attr-isEu' => '0'];
-            },
-        ])
-        ->add('taxNumber', TextType::class, [
+        ]);
+        $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) {
+            $address = $event->getData();
+            $form = $event->getForm();
+
+            if ($address && $address->getCountry() && $address->getCountry()->isEU()) {
+                $form->add('taxNumber', TextType::class, [
+                    'attr' => ['class' => 'form-control'],
+                    'required' => false,
+                ]);
+            }
+        })
+        ->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) {
+            $data = $event->getData();
+            $form = $event->getForm();
+
+            if (isset($data['country']) && $data['country']["isEU"]) {
+                $form->add('taxNumber', TextType::class, [
+                    'attr' => ['class' => 'form-control tax-number-field', 'style' => 'display: none;'],
+                    'required' => false,
+                    
+                ]);
+            }
+        });
+        $builder->add('taxNumber', TextType::class, [
             'attr' => ['class' => 'form-control'],
         ])
         ->add('telephone', TextType::class, [
@@ -69,6 +83,18 @@ class AddressType extends AbstractType
             'label'=> 'Weiter',
             'attr' => ['class' => 'form-control btn btn-primary btn-block'],
         ]);
+
+
+        // ->add('country', EntityType::class, [
+        //     'class' => Country::class,
+        //     'choice_label' => 'name',
+        //     'placeholder' => 'Wählen Sie ein Land',
+        //     'attr' => ['class' => 'form-control'],
+        //     'choice_attr' => function($country) {
+        //         return $country->isEU() ? ['attr-isEu' => '1'] : ['attr-isEu' => '0'];
+        //     },
+        // ])
+
     }
     public function configureOptions(OptionsResolver $resolver)
     {

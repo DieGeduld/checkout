@@ -16,7 +16,7 @@ use App\Entity\ShoppingCartProduct;
 use App\Entity\User;
 use App\Entity\Country;
 use App\Entity\Address;
-use App\Service\ProductService;
+use App\Services\ProductService;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Bundle\SecurityBundle\Security;

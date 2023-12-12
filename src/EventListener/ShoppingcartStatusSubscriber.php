@@ -10,7 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Product;
 use App\Entity\ShoppingCart;
 use App\Entity\ShoppingCartProduct;
-use App\Service\ProductService;
+use App\Services\ProductService;
 use Twig\Environment as TwigEnvironment;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
