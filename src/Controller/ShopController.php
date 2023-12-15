@@ -52,6 +52,7 @@ class ShopController extends AbstractController
         $this->shoppingCartProducts = $productService->getShoppingCartProducts();
         $this->shoppingCart = $productService->getShoppingCart();
         $this->addresses = $productService->getAddresses();
+        
     }
 
     #[Route('/shop', name: 'app_shop')]
@@ -172,8 +173,9 @@ class ShopController extends AbstractController
     {
         $this->changeState("shopping_cart");
 
-        $shoppingCart = $this->getShoppingCart();
-        if (count($this->getShoppingCartProducts()) == 0) {
+        $shoppingCart = $this->shoppingCart;
+
+        if (count($this->shoppingCartProducts) == 0) {
             $this->addFlash('error', "Your shopping cart is empty");
             return $this->redirectToRoute('app_shop');
         }
@@ -238,7 +240,7 @@ class ShopController extends AbstractController
     public function shoppingcart_remove(int $id): Response
     {
         $product = $this->entityManager->getRepository(Product::class)->find($id);
-        $shoppingCart = $this->getShoppingCart();
+        $shoppingCart = $this->shoppingCart;
 
         $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->findOneBy([
             'shoppingcart' => $shoppingCart, 
@@ -355,17 +357,10 @@ class ShopController extends AbstractController
 
         $this->changeState("summary");
 
-        $shoppingCart = $this->getShoppingCart();
+        $shoppingCart = $this->shoppingCart;
 
         if ($this->security->getUser()) {
-            dd("currently not supported");
-            // $address = $this->entityManager->getRepository(Address::class)->findOneBy(['user_id' =>$this->security->getUser()->getId()]);
-
-            // return $this->render('shop/summary.html.twig', [
-            //     'shoppingCart' => $shoppingCart,
-            //     'address' => $address,
-            // ]);
-
+            dd("Logged user not yet supported.");
         } else {
 
             $session = $this->requestStack->getSession();
@@ -385,13 +380,9 @@ class ShopController extends AbstractController
     {
         $this->changeState("ordered");
 
-
         if ($this->security->getUser()) {
-                
-            dd("currently not supported");
+            dd("Logged user not yet supported.");
         } else {
-
-            $this->getShoppingCartProducts();
 
             // save address to session
             $request = $this->requestStack->getCurrentRequest();
@@ -406,7 +397,7 @@ class ShopController extends AbstractController
             
             // TODO: Write address to order, or separate 'address_order' table?
             // $order->setAddressId($address->getId());
-            // $order->setTotal($this->getShoppingCart()->getTotal());
+            // $order->setTotal($this->shoppingCart->getTotal());
             $order->setDate(new \DateTime());
             $order->setStatus("ordered");
             $this->entityManager->persist($order);
@@ -418,100 +409,35 @@ class ShopController extends AbstractController
             return $this->render('shop/ordered.html.twig', [
                 'order' => $order,
                 'userData' => $userData,
-                'items' => $this->getShoppingCartProducts()
+                'items' => $this->shoppingCartProducts
             ]);
         }
-
-
-
-        // $session = $this->requestStack->getSession();
-        // $userData = $session->get('userData', []);
-
-        // $orderedItems = [];
-
-        // return $this->render('shop/summary.html.twig', [
-        //     'orderedItems' => $orderedItems,
-        //     'userData' => $userData
-        // ]);
     }
-
-    // get shopping cart
-    public function getShoppingCart(): ShoppingCart
-    {
-        if ($this->getUser() == null) {
-            $request = $this->requestStack->getCurrentRequest();
-            $sessionId = $request->getSession()->getId();
-    
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
-    
-            if ($shoppingCart == null) {
-                $shoppingCart = new ShoppingCart();
-                $shoppingCart->setSessionId($sessionId);
-                $shoppingCart->setState("shopping");
-                $this->entityManager->persist($shoppingCart);
-                $this->entityManager->flush();
-            }
-    
-        } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
-        }
-        return $shoppingCart;
-    }
-    // get shopping cart
-    
-    public function getShoppingCartProducts(): Array
-    {
-        if ($this->getUser() == null) {
-            $request = $this->requestStack->getCurrentRequest();
-            $sessionId = $request->getSession()->getId();
-
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
-
-            if ($shoppingCart == null) {
-                $shoppingCart = new ShoppingCart();
-                $shoppingCart->setSessionId($sessionId);
-                $shoppingCart->setState("shopping");
-                $this->entityManager->persist($shoppingCart);
-                $this->entityManager->flush();
-            }
-
-        } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
-        }
-        $shoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $shoppingCart->getId()]);    
-        return $shoppingCartProducts;
-
-    }    
-
 
     function changeState($transition)
     {
-        $workflow = $this->workflowRegistry->get($this->getShoppingCart(), 'checkout_process');
-        $marking = $workflow->getMarking($this->getShoppingCart());
+        $workflow = $this->workflowRegistry->get($this->shoppingCart, 'checkout_process');
+        $marking = $workflow->getMarking($this->shoppingCart);
         $currentState = array_keys($marking->getPlaces())[0];
+    
+        $this->addFlash('success', $currentState . ' -> ' . $transition); 
     
         if ($currentState != $transition) {
             try {          
-                $workflow->apply($this->getShoppingCart(), 'to_' . $transition);
-                $this->entityManager->persist($this->getShoppingCart());
+                $workflow->apply($this->shoppingCart, 'to_' . $transition);
+                $this->entityManager->persist($this->shoppingCart);
                 $this->entityManager->flush();
             } catch (TransitionException $e) {
-                $this->addFlash('error', "??" . $e->getMessage()); 
+                $this->addFlash('error', $e->getMessage()); 
                 return $this->redirectToRoute('app_shop');
             }
         }
     
         // Recheck the state and add a success message if needed
-        $newMarking = $workflow->getMarking($this->getShoppingCart());
+        $newMarking = $workflow->getMarking($this->shoppingCart);
         $newState = array_keys($newMarking->getPlaces())[0];
         if ($newState !== $currentState) {
-            $request = $this->requestStack->getCurrentRequest();
-            $referer = $request->headers->get('referer');
-            if ($referer === null) {
-                $referer = $this->generateUrl('app_shop');
-            }
-            $this->addFlash('success', $currentState . ' -> ' . $transition); 
-            return $this->redirect($referer);
+            $this->addFlash('success', "State changed to: " . $newState); 
         }
     }
     

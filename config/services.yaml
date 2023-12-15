@@ -20,32 +20,22 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    App\Services\ProductService:
-        # arguments:
-        #     $entityManager: '@doctrine.orm.entity_manager'
-        #     $requestStack: '@request_stack'
-
-    App\EventListener\LoginListener:
-        # arguments:
-        #     $requestStack: '@request_stack'
-        # tags:
-        #     - { name: 'kernel.event_listener', event: 'security.interactive_login', method: 'onSecurityInteractiveLogin' }
-
     App\EventListener\ShoppingcartStatusSubscriber:
-        # tags:
-        #     - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: -10 }
-        # arguments:
-        #     $entityManager: '@doctrine.orm.entity_manager'
-        # tags: 
-        #     - { name: 'kernel.event_subscriber' }
+        arguments:
+            $security: '@security.helper'
+            $entityManager: '@doctrine.orm.entity_manager'
+            $twig: '@twig'
+            $requestStack: '@request_stack'
+        tags: 
+            - { name: 'kernel.event_subscriber' }
 
     App\Controller\ShopController:
-        arguments:
-            $entityManager: '@doctrine.orm.entity_manager'
-            $requestStack: '@request_stack'
-            $security: '@Symfony\Bundle\SecurityBundle\Security'
-            $workflow: '@state_machine.checkout_process'
-            $productService: '@App\Services\ProductService'
+      autowire: true
+      arguments:
+        $entityManager: '@doctrine.orm.entity_manager'
+        $requestStack: '@request_stack'
+        $security: '@Symfony\Bundle\SecurityBundle\Security'
+        $workflow: '@state_machine.checkout_process'
         
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -19,10 +19,8 @@ class ProductController extends AbstractController
     }
 
     #[Route('/product/{id}', name: 'app_product_show')]
-    public function show(EntityManagerInterface $entityManager, int $id): Response
+    public function show(EntityManagerInterface $entityManager, Product $product): Response
     {
-        $product = $entityManager->getRepository(Product::class)->find($id);
-
         return $this->render('product/show.html.twig', [
             'controller_name' => 'ProductController',
             'product' => $product,

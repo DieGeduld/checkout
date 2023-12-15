@@ -26,28 +26,23 @@ class ProductService
 
     public function getShoppingCartProducts(): array
     {
-        if ($this->security->getUser() == null) {
+        $shoppingCart = $this->getShoppingCart();       
 
-            $session = $this->request->getSession();
-            $sessionId = $session->getId();
+        $queryBuilder = $this->entityManager->createQueryBuilder();
 
-            $sessionId = $this->request->getSession()->getId();
-
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
-
-            if ($shoppingCart == null) {
-                $shoppingCart = new ShoppingCart();
-                $shoppingCart->setSessionId($sessionId);
-                $shoppingCart->setState("shopping6");
-                $this->entityManager->persist($shoppingCart);
-                $this->entityManager->flush();
-            }
-
-        } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
-        }
-
-        $shoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $shoppingCart->getId()]);    
+        $queryBuilder->select([
+            'p.id AS id',
+            'scp.quantity AS quantity',
+            'p.name AS name',
+            'p.price AS price',
+            'p.price * scp.quantity AS sum'
+        ])
+        ->from(ShoppingCartProduct::class, 'scp')
+        ->join('scp.product', 'p') // Annahme, dass ShoppingCartProduct eine 'product' Beziehung hat
+        ->where('scp.shoppingcart = :shoppingCartId')
+        ->setParameter('shoppingCartId', $shoppingCart->getId());
+        
+        $shoppingCartProducts = $queryBuilder->getQuery()->getResult();
         return $shoppingCartProducts;
     }
 
@@ -66,7 +61,7 @@ class ProductService
             if ($shoppingCart == null) {
                 $shoppingCart = new ShoppingCart();
                 $shoppingCart->setSessionId($sessionId);
-                $shoppingCart->setState("shopping7");
+                $shoppingCart->setState("shopping");
                 $this->entityManager->persist($shoppingCart);
                 $this->entityManager->flush();
             }
@@ -75,6 +70,16 @@ class ProductService
             $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
         }
         return $shoppingCart;
+    }
+
+    public function getShoppingCartSum(): float
+    {
+        $shoppingCartProducts = $this->getShoppingCartProducts();
+        $sum = 0;
+        foreach ($shoppingCartProducts as $shoppingCartProduct) {
+            $sum += $shoppingCartProduct['sum'];
+        }
+        return $sum;
     }
 
     public function getAddresses(): array
@@ -86,5 +91,5 @@ class ProductService
         }
         return $addresses;
     }
-
+    
 }
