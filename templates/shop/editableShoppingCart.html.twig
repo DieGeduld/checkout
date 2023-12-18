@@ -1,41 +1,45 @@
-{% if shoppingcart is empty %}
-    
-    <p>Ihr Warenkorb ist leer</p>
+<div class="editableShoppingCartWrapper">
 
-{% else %}
-    <table class="editableShoppingCart" width="100%">
-        <tr>
-            <th>Produkt</th>
-            <th>Preis</th>
-            <th>Anzahl</th>
-            <th>Gesamt</th>
-            <th></th>
-            <th></th>
-            <th></th>
-        </tr>
+    {% if shoppingcart is empty %}
+        
+        <p>Ihr Warenkorb ist leer</p>
 
-        {% for item in shoppingcart %}
+    {% else %}
+        <table class="editableShoppingCart" width="100%">
             <tr>
-                <td>{{ item.name }}</td>
-                <td>{{ item.price|number_format(2, ',', '.') }} €</td>
-                <td valign="center">
-                    <!-- busted! -->
-                    <form style="margin: 0" action="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}" method="post">
-                        <input class="quantity" type="number" name="quantity" min="0" value="{{ item.quantity }}">
-                        <input class="updateItem" type="submit" value="Update">
-                    </form>
-                    {# <input class="quantity" type="number" min="0" value="{{ item.quantity }}">
-                    <a class="updateItem" href="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}">Update</a> #}
-                </td>
-                <td>{{ item.sum|number_format(2, ',', '.') }} €</td>
-                <td width="20"><a class="btn btn-success py-0 px-2" title="Increase item amout" class="increaseItemAmout" href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
-                <td width="20"><a class="btn btn-warning py-0 px-2" title="decrease item aount" class="decreaseItemAmout" href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
-                <td width="20"><a class="btn btn-danger py-0 px-2" title="remove item" class="removeItem" href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
+                <th>Produkt</th>
+                <th>Preis</th>
+                <th>Anzahl</th>
+                <th>Gesamt</th>
+                <th></th>
+                <th></th>
+                <th></th>
             </tr>
-        {% endfor %}
-    </table>
-    <div class="total">
-        <p>Gesamt: {{ shoppingcartsum|number_format(2, ',', '.') }} €</p>
-    </div>
 
-{% endif %}
+            {% for item in shoppingcart %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.price|number_format(2, ',', '.') }} €</td>
+                    <td valign="center">
+                        <!-- busted! -->
+                        <form style="margin: 0" action="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}" method="post">
+                            <input class="quantity ajax" type="number" name="quantity" min="0" value="{{ item.quantity }}">
+                            <input class="updateItem" type="submit" value="Update">
+                        </form>
+                        {# <input class="quantity" type="number" min="0" value="{{ item.quantity }}">
+                        <a class="updateItem" href="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}">Update</a> #}
+                    </td>
+                    <td>{{ item.sum|number_format(2, ',', '.') }} €</td>
+                    <td width="20"><a class="btn btn-success py-0 px-2 increaseItemAmout ajax" title="Increase item amout" href="{{ path('app_shop_shoppingcart_increase', {'id': item.id}) }}">+</a></td>
+                    <td width="20"><a class="btn btn-warning py-0 px-2 decreaseItemAmout ajax" title="decrease item aount" href="{{ path('app_shop_shoppingcart_decrease', {'id': item.id}) }}">-</a></td>
+                    <td width="20"><a class="btn btn-danger py-0 px-2 removeItem ajax" title="remove item" href="{{ path('app_shop_shoppingcart_remove', {'id': item.id}) }}">X</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+        <div class="total">
+            <p>Gesamt: {{ shoppingcartsum|number_format(2, ',', '.') }} €</p>
+        </div>
+
+    {% endif %}
+
+</div>

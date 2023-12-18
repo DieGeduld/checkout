@@ -91,5 +91,16 @@ class ProductService
         }
         return $addresses;
     }
+
+    public function purgeShoppingCart(): void
+    {
+        $shoppingCartId = $this->getShoppingCart()->getId();
+        $shoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $shoppingCartId]);
+
+        foreach ($shoppingCartProducts as $shoppingCartProduct) {
+            $this->entityManager->remove($shoppingCartProduct);
+            $this->entityManager->flush();
+        }
+    }
     
 }

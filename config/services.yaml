@@ -28,6 +28,8 @@ services:
             $requestStack: '@request_stack'
         tags: 
             - { name: 'kernel.event_subscriber' }
+            - { name: kernel.event_listener, event: workflow.checkout_process.enter, method: onTransitionToShoppingCart }
+
 
     App\Controller\ShopController:
       autowire: true

@@ -37,7 +37,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user_id', targetEntity: Address::class)]
     private Collection $addresses;
 
-    #[ORM\OneToMany(mappedBy: 'user_id', targetEntity: Order::class)]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Order::class)]
     private Collection $orders;
 
     #[ORM\Column(type: 'boolean')]

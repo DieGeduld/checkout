@@ -23,21 +23,59 @@ $(function () {
     let addressField = document.getElementById('address_country');
     let taxContainer = document.getElementById('tax-container');
 
-    addressField.addEventListener('change', function() {
+    if (addressField) {
 
-        data = new FormData();
-        data.append('countryId', $(this).val());
+        addressField.addEventListener('change', function() {
 
-        fetch("/address/check-country", {
-            method: 'POST',
-            body: data
-        }).then(function(response) {
-            return response.text();
-        }).then(function(html) {
-            if (JSON.parse(html).isEu) {
-                taxContainer.style.display = 'block';
-            } else {
-                taxContainer.style.display = 'none';
+            data = new FormData();
+            data.append('countryId', $(this).val());
+
+            fetch("/address/check-country", {
+                method: 'POST',
+                body: data
+            }).then(function(response) {
+                return response.text();
+            }).then(function(html) {
+                if (JSON.parse(html).isEu) {
+                    taxContainer.style.display = 'block';
+                } else {
+                    taxContainer.style.display = 'none';
+                }
+            });
+        });
+    }
+
+
+    $(document).on("click change", ".ajax", (e) => {
+        e.preventDefault();
+        $this = $(e.currentTarget);
+        $replace = $(".editableShoppingCartWrapper");
+
+        let url = "";
+        if ($this.is("a")) {
+            url = $this.attr('href');
+        } else {
+            url = $this.closest("form").attr('action');
+            url += "?" + $this.closest("form").serialize();
+        }
+    
+        $.ajax({
+            url: url,
+            type: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function (data) {
+                $replace.html(data.editableShoppingCartHtmlWrapper);
+                console.log(data.products);
+                if (data.products.length) {
+                    $(".toShoppingCart").removeClass("d-none");
+                }  else {
+                    $(".toShoppingCart").addClass("d-none");
+                } 
+                //Todo: Flash message: data.message
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log(textStatus, errorThrown);
+                // Todo: error flash message
             }
         });
     });

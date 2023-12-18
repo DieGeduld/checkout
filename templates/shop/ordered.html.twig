@@ -15,10 +15,37 @@
     <h2>Bestellübersicht</h2>
 
     <br>
-    {{ dump(order) }}
-    {{ dump(userData) }}
-    {{ dump(items) }}
+        Order ID: {{ order.id }} , Bestelldatum: {{ order.date|date('d.m.Y H:i:s') }}   
 
+    {% for data in userData|keys %}
+        {{ data }}: {{ userData[data] }}<br>
+    {% endfor %}
+
+
+    <br>    
+
+    <h3>Bestellte Produkte</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Produkt</th>
+                <th scope="col">Preis</th>
+                <th scope="col">Anzahl</th>
+                <th scope="col">Gesamt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.price }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.sum }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
     
     <a class="btn btn-primary" href="{{ path('app_shop') }}">&larr; Zurück zum Shop</a>
 

@@ -15,7 +15,7 @@
                         <h5 class="card-title">{{ product.getName }}</h5>
                         <p class="card-text">{{ product.getDescription }}</p>
                         <a href="{{ path('app_product_show', {'id': product.getId}) }}" class="btn btn-secondary">Detail</a>
-                        <a href="{{ path('app_shop_addtocart', {'id': product.getId}) }}" class="btn btn-primary">In den Warenkorb</a>
+                        <a href="{{ path('app_shop_addtocart', {'id': product.getId}) }}"  class="btn btn-primary ajax">In den Warenkorb</a>
                         </div>
                     </div>
                 </div>

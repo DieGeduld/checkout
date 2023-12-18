@@ -20,6 +20,8 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use App\Services\ProductService;
+use Symfony\Component\Workflow\Event\Event;
+
 
 class ShoppingcartStatusSubscriber implements EventSubscriberInterface
 {
@@ -77,9 +79,9 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
         
     }
 
-    public function onTransitionToShoppingCart()
+    public function onTransitionToShoppingCart(Event $event)
     {
-        // dd("!yyyy!");
+        // wenn der State geändert wird... vielleicht brauchen wir das noch...
     }
 
 }

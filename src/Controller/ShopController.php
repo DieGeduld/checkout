@@ -27,6 +27,7 @@ use App\Form\Type\AddressType;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Order;
 use Symfony\Component\Form\FormFactoryInterface;
+use Twig\Environment as TwigEnvironment;
 
 class ShopController extends AbstractController
 {
@@ -40,9 +41,10 @@ class ShopController extends AbstractController
     private $shoppingCart;
     private $addresses;
     private $formFactory;
+    private $twig;
 
 
-    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security, Workflow $checkoutProcessWorkflow, Registry $workflowRegistry, ProductService $productService, FormFactoryInterface $formFactory)
+    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security, Workflow $checkoutProcessWorkflow, Registry $workflowRegistry, ProductService $productService, FormFactoryInterface $formFactory, TwigEnvironment $twig)
     {
         $this->entityManager = $entityManager;
         $this->requestStack = $requestStack;
@@ -54,13 +56,23 @@ class ShopController extends AbstractController
         $this->shoppingCart = $productService->getShoppingCart();
         $this->addresses = $productService->getAddresses();
         $this->formFactory = $formFactory;
-        
+        $this->twig = $twig;
     }
 
     #[Route('/shop', name: 'app_shop')]
     public function index(): Response
     { 
-        $this->changeState("shopping");
+
+        if (!$this->changeState("shopping")) {
+            $request = $this->requestStack->getCurrentRequest();
+            $referer = $request->headers->get('referer');
+            if ($referer === null) {
+                $referer = $this->generateUrl('app_shop');
+            }
+            return $this->redirect($referer);
+        }
+
+
         // Get all Products
         $products = $this->entityManager->getRepository(Product::class)->findAll();
 
@@ -74,9 +86,9 @@ class ShopController extends AbstractController
     #[Route('/shop/updatecart/{id}', name:'app_shop_shoppingcart_update')]
     public function update(Product $product, Request $request): Response
     {
-        $quantity = $request->request->get('quantity', 1);
+        $quantity = $request->get('quantity', 1);
 
-        if ($quantity <= 0) {
+        if ($quantity < 0) {
             return $this->redirectToRoute('app_shop_shoppingcart');
         }
 
@@ -97,17 +109,17 @@ class ShopController extends AbstractController
                 $shoppingCartProduct->setProduct($product);
                 $shoppingCartProduct->setQuantity($quantity);
                 $this->entityManager->persist($shoppingCartProduct);
-                $this->addFlash('success', "Added \"" . $product->getName() . "\" to shopping cart");
+                $message =  "Added \"" . $product->getName() . "\" to shopping cart";
             } else {
 
                 if ($shoppingCartProduct->getQuantity() + $quantity <= 0) {
-                    $this->addFlash('success', "Removed \"" . $product->getName() . "\" from shopping cart");
+                    $message =  "Removed \"" . $product->getName() . "\" from shopping cart";
                     $this->entityManager->remove($shoppingCartProduct);
                 } else {
                     if ($shoppingCartProduct->getQuantity() > $quantity) {
-                        $this->addFlash('success', "Removed " . abs($quantity - $shoppingCartProduct->getQuantity())  . "x \"" . $product->getName() . "\" from shopping cart");
+                        $message =  "Removed " . abs($quantity - $shoppingCartProduct->getQuantity())  . "x \"" . $product->getName() . "\" from shopping cart";
                     } else {
-                        $this->addFlash('success', "Added " . abs($shoppingCartProduct->getQuantity() - $quantity)  . "x \"" . $product->getName() . "\" from shopping cart");
+                        $message =  "Added " . abs($shoppingCartProduct->getQuantity() - $quantity)  . "x \"" . $product->getName() . "\" from shopping cart";
                     }
 
                     $shoppingCartProduct->setQuantity($quantity);
@@ -117,22 +129,47 @@ class ShopController extends AbstractController
             $this->entityManager->flush();
             
         }
-
-        // return from where you came
-        $request = $this->requestStack->getCurrentRequest();
-        $referer = $request->headers->get('referer');
-        if ($referer === null) {
-            $referer = $this->generateUrl('app_shop');
-        }
-        return $this->redirect($referer);
-
+        
+        return $this->requestDone($request, $message);
+        
     }
 
+    private function requestDone($request, $message = "") {
+        if ($request->isXmlHttpRequest()) {
+
+            $this->twig->addGlobal('shoppingcart', $this->productService->getShoppingCartProducts());        
+            $this->twig->addGlobal('shoppingcartsum', $this->productService->getShoppingCartSum());   
+            
+            $editableShoppingCartHtmlWrapper = $this->renderView('shop/editableShoppingCart.html.twig');
+
+            return new Response(
+                json_encode([
+                    'success' => true,
+                    'message' => $message,
+                    'editableShoppingCartHtmlWrapper' => $editableShoppingCartHtmlWrapper,
+                    'sum' => $this->productService->getShoppingCartSum(),
+                    'products' => $this->productService->getShoppingCartProducts()
+                ]),
+                200,
+                ['Content-Type' => 'application/json']
+            );
+
+        } else {
+            // return from where you came
+            $request = $this->requestStack->getCurrentRequest();
+            $referer = $request->headers->get('referer');
+            if ($referer === null) {
+                $referer = $this->generateUrl('app_shop');
+            }
+            return $this->redirect($referer);
+        }
+    }
 
     //add to cart
     #[Route('/shop/addtocart/{id}', name: 'app_shop_addtocart')]
     public function addtocart(Product $product, Request $request): Response
     {
+
         $quantity = $request->query->get('quantity', 1);
 
         if ($quantity <= 0) {
@@ -150,30 +187,59 @@ class ShopController extends AbstractController
             $shoppingCartProduct->setProduct($product);
             $shoppingCartProduct->setQuantity($quantity);
             $this->entityManager->persist($shoppingCartProduct);
-            $this->addFlash('success', "Added \"" . $product->getName() . "\" to shopping cart");
+            $message = "Added \"" . $product->getName() . "\" to shopping cart";
         } else {
-            $this->addFlash('success', "Added " . abs($quantity) . "x \"" . $product->getName() . "\" to shopping cart");
             $shoppingCartProduct->setQuantity($shoppingCartProduct->getQuantity() + $quantity);
+            $message = "Added " . abs($quantity) . "x \"" . $product->getName() . "\" to shopping cart";
+
         }
         $this->entityManager->flush();
 
+        return $this->requestDone($request, $message);
 
+        // if ($request->isXmlHttpRequest()) {
 
-        // return from where you came
-        $request = $this->requestStack->getCurrentRequest();
-        $referer = $request->headers->get('referer');
-        if ($referer === null) {
-            $referer = $this->generateUrl('app_shop');
-        }
-        return $this->redirect($referer);
+        //     $this->twig->addGlobal('shoppingcart', $this->productService->getShoppingCartProducts());        
+        //     $this->twig->addGlobal('shoppingcartsum', $this->productService->getShoppingCartSum());   
+            
+        //     $editableShoppingCartHtmlWrapper = $this->renderView('shop/editableShoppingCart.html.twig');
 
+        //     return new Response(
+        //         json_encode([
+        //             'success' => true,
+        //             'message' => "Added " . abs($quantity) . "x \"" . $product->getName() . "\" to shopping cart",
+        //             'editableShoppingCartHtmlWrapper' => $editableShoppingCartHtmlWrapper,
+        //             'sum' => $this->productService->getShoppingCartSum(),
+        //             'products' => $this->productService->getShoppingCartProducts()
+        //         ]),
+        //         200,
+        //         ['Content-Type' => 'application/json']
+        //     );
+
+        // } else {
+        //     // return from where you came
+        //     $request = $this->requestStack->getCurrentRequest();
+        //     $referer = $request->headers->get('referer');
+        //     if ($referer === null) {
+        //         $referer = $this->generateUrl('app_shop');
+        //     }
+        //     return $this->redirect($referer);
+        // }
     }
 
     // route for the shopping cart
     #[Route('/shop/shoppingcart', name: 'app_shop_shoppingcart')]
     public function shoppingcart(EntityManagerInterface $entityManager): Response
     {
-        $this->changeState("shopping_cart");
+        if (!$this->changeState("shopping_cart")) {
+            $request = $this->requestStack->getCurrentRequest();
+            $referer = $request->headers->get('referer');
+            if ($referer === null) {
+                $referer = $this->generateUrl('app_shop');
+            }
+            return $this->redirect($referer);
+        }
+
 
         $shoppingCart = $this->shoppingCart;
 
@@ -191,7 +257,6 @@ class ShopController extends AbstractController
     #[Route('/shop/shoppingcart/increase/{id}', name: 'app_shop_shoppingcart_increase')]
     public function shoppingcart_increase(EntityManagerInterface $entityManager, Request $request, Product $product): Response
     {
-
         $shoppingCartProduct = $this->entityManager->getRepository(ShoppingCartProduct::class)->findOneBy(['shoppingcart' => $this->shoppingCart->getId(), 'product' => $product]);    
         if ($shoppingCartProduct) {
             $currentQuantity = $shoppingCartProduct->getQuantity();
@@ -208,7 +273,9 @@ class ShopController extends AbstractController
         if ($referer === null) {
             $referer = $this->generateUrl('app_shop');
         }
-        return $this->redirect($referer);
+
+        return $this->requestDone($request, "wihup");
+        // return $this->redirect($referer);
     }
 
     // app_shop_shoppingcart_decrease
@@ -234,7 +301,8 @@ class ShopController extends AbstractController
         if ($referer === null) {
             $referer = $this->generateUrl('app_shop');
         }
-        return $this->redirect($referer);
+        return $this->requestDone($request, "wihup");
+        // return $this->redirect($referer);
     }
 
     // app_shop_shoppingcart_remove
@@ -251,9 +319,9 @@ class ShopController extends AbstractController
         if ($shoppingCartProduct) {
             $this->entityManager->remove($shoppingCartProduct);
             $this->entityManager->flush();
-            $this->addFlash('success','Removed "' . $product->getName() . '" from shopping cart');
+            $messsage = "Removed \"" . $product->getName() . "\" from shopping cart";
         } else {
-            $this->addFlash('success', $product->getName() . 'was allready removed from shopping cart');
+            $messsage = $product->getName() . " was allready removed from shopping cart";
         }
         
         $request = $this->requestStack->getCurrentRequest();
@@ -261,7 +329,8 @@ class ShopController extends AbstractController
         if ($referer === null) {
             $referer = $this->generateUrl('app_shop');
         }
-        return $this->redirect($referer);
+        return $this->requestDone($request, $messsage);
+        // return $this->redirect($referer);
     }
 
     // route for the delivery address
@@ -343,7 +412,16 @@ class ShopController extends AbstractController
 
         $form = $this->createForm(AddressType::class, $address);
 
-        $this->changeState("delivery_address");
+        if (!$this->changeState("delivery_address")) {
+            $request = $this->requestStack->getCurrentRequest();
+            $referer = $request->headers->get('referer');
+            if ($referer === null) {
+                $referer = $this->generateUrl('app_shop');
+            }
+            return $this->redirect($referer);
+        }
+
+
         if ($this->security->getUser()) {
 
             $currentAddress = $this->security->getUser()->getCurrentAddress();
@@ -423,7 +501,10 @@ class ShopController extends AbstractController
     public function summary(EntityManagerInterface $entityManager): Response
     {
 
-        $this->changeState("summary");
+        if (!$this->changeState("summary")) {
+            $referer = $this->generateUrl('app_shop_shoppingcart');
+            return $this->redirect($referer);
+        }
 
         $shoppingCart = $this->shoppingCart;
 
@@ -446,7 +527,14 @@ class ShopController extends AbstractController
     #[Route('/shop/ordered', name: 'app_shop_ordered')]
     public function ordered(EntityManagerInterface $entityManager): Response
     {
-        $this->changeState("ordered");
+        if (!$this->changeState("ordered")) {
+            if (count($this->productService->getShoppingCartProducts()) > 0 ) {
+                $referer = $this->generateUrl('app_shop_shoppingcart');
+            } else {
+                $referer = $this->generateUrl('app_shop');
+            } 
+            return $this->redirect($referer);
+        }
 
         if ($this->security->getUser()) {
             dd("Logged user not yet supported.");
@@ -471,13 +559,18 @@ class ShopController extends AbstractController
             $this->entityManager->persist($order);
             $this->entityManager->flush();
             
-            
             $session->set('order', $order);
+            
+            $items = $this->shoppingCartProducts;
+
+            // remove all items from the shopping cart
+            $this->productService->purgeShoppingCart();
+            $this->changeState("shopping");
                         
             return $this->render('shop/ordered.html.twig', [
                 'order' => $order,
                 'userData' => $userData,
-                'items' => $this->shoppingCartProducts
+                'items' => $items
             ]);
         }
     }
@@ -488,25 +581,31 @@ class ShopController extends AbstractController
         $marking = $workflow->getMarking($this->shoppingCart);
         $currentState = array_keys($marking->getPlaces())[0];
     
-        $this->addFlash('success', $currentState . ' -> ' . $transition); 
-    
         if ($currentState != $transition) {
             try {          
                 $workflow->apply($this->shoppingCart, 'to_' . $transition);
                 $this->entityManager->persist($this->shoppingCart);
                 $this->entityManager->flush();
             } catch (TransitionException $e) {
+                // TODO: Schöne Fehlermeldung
                 $this->addFlash('error', $e->getMessage()); 
-                return $this->redirectToRoute('app_shop');
+                return false;
             }
         }
-    
+
+
         // Recheck the state and add a success message if needed
         $newMarking = $workflow->getMarking($this->shoppingCart);
         $newState = array_keys($newMarking->getPlaces())[0];
         if ($newState !== $currentState) {
-            $this->addFlash('success', "State changed to: " . $newState); 
+
+            //persist to DB:
+            $this->productService->getShoppingCart()->setState($transition);
+            $this->entityManager->persist($this->productService->getShoppingCart());
+        
+            // $this->addFlash('success', "State changed to: " . $transition); 
         }
+        return true;
     }
     
     #[Route('/shop/fill', name: 'fillshop')]
