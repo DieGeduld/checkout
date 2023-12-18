@@ -68,6 +68,10 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
         $this->shoppingCartProducts = $this->productService->getShoppingCartProducts();
         $this->shoppingCart = $this->productService->getShoppingCart();
 
+        // if (count($this->shoppingCartProducts[0]) == 0) {
+        //     $event->setResponse(new RedirectResponse('/'));
+        // }
+
         $this->twig->addGlobal('shoppingcart', $this->shoppingCartProducts);        
         $this->twig->addGlobal('shoppingcartsum', $this->productService->getShoppingCartSum());        
         

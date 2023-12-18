@@ -18,15 +18,41 @@ require('bootstrap/dist/css/bootstrap.min.css');
 
 $(function () {
 
-    function toggleTaxNumberField() {
-        var isEu = $('#address_country option:selected').attr('attr-iseu') === '1';
-        if (isEu) {
-            $('#address_taxNumber').closest('div').show();
-        } else {
-            $('#address_taxNumber').closest('div').hide();
-        }
-    }
-    $('#address_country').on('change', toggleTaxNumberField);
-    toggleTaxNumberField();
+    // Via Ajax:
+
+    let addressField = document.getElementById('address_country');
+    let taxContainer = document.getElementById('tax-container');
+
+    addressField.addEventListener('change', function() {
+
+        data = new FormData();
+        data.append('countryId', $(this).val());
+
+        fetch("/address/check-country", {
+            method: 'POST',
+            body: data
+        }).then(function(response) {
+            return response.text();
+        }).then(function(html) {
+            if (JSON.parse(html).isEu) {
+                taxContainer.style.display = 'block';
+            } else {
+                taxContainer.style.display = 'none';
+            }
+        });
+    });
+
+    // Direkt über Attribt:
+
+    // function toggleTaxNumberField() {
+    //     var isEu = $('#address_country option:selected').attr('attr-iseu') === '1';
+    //     if (isEu) {
+    //         $('#address_taxNumber').closest('div').show();
+    //     } else {
+    //         $('#address_taxNumber').closest('div').hide();
+    //     }
+    // }
+    // $('#address_country').on('change', toggleTaxNumberField);
+    // toggleTaxNumberField();
 
 }); 

@@ -13,6 +13,8 @@ use App\Form\Type\AddressType;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Form\Type\AddressSelectType;
+use App\Entity\Country;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class AddressController extends AbstractController
 {
@@ -52,17 +54,12 @@ class AddressController extends AbstractController
                 'currentAddress' => $address,
                 'form' => $form,
             ]);
-        
-
-
         }
+   
         return $this->render('address/index.html.twig', [
             'controller_name' => 'AddressController',
             'form' => $form->createView(),
         ]);
-
-
-
     }
 
     #[Route('/address/create', name: 'app_address_create')]
@@ -111,6 +108,15 @@ class AddressController extends AbstractController
         ]);
     }
 
+
+     #[Route('/address/check-country', name: 'check_country',  methods: ['POST'])]
+    public function checkCountry(Request $request): JsonResponse
+    {
+        $countryId = $request->request->get('countryId');
+        $isEu = $this->entityManager->getRepository(Country::class)->find($countryId)->isEU();
+
+        return new JsonResponse(['isEu' => $isEu]);
+    }
 
 
 }

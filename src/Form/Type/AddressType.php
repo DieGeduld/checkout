@@ -16,16 +16,28 @@ use App\Entity\Address;
 
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
+use Doctrine\ORM\EntityManagerInterface;
+
 
 class AddressType extends AbstractType
 {
     private $loggedin;
+    private $entityManager;
+
+
+    public function __construct(EntityManagerInterface $entityManager)
+    {
+        $this->entityManager = $entityManager;
+    }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
 
 
-        $builder->add("firstName", TextType::class, [
+        $builder->setAttributes([
+            'id' => 'address-form',
+        ])
+        ->add("firstName", TextType::class, [
             "label"=> "First Name",
             "required"=> true,
             'attr' => ['class' => 'form-control']
@@ -47,30 +59,6 @@ class AddressType extends AbstractType
         ->add('zip', TextType::class, [
             'attr' => ['class' => 'form-control'],
         ])
-        // TODO: Eventlistener benutzen
-        // $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) {
-        //     $address = $event->getData();
-        //     $form = $event->getForm();
-
-        //     if ($address && $address->getCountry() && $address->getCountry()->isEU()) {
-        //         $form->add('taxNumber', TextType::class, [
-        //             'attr' => ['class' => 'form-control'],
-        //             'required' => false,
-        //         ]);
-        //     }
-        // })
-        // ->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) {
-        //     $data = $event->getData();
-        //     $form = $event->getForm();
-
-        //     if (isset($data['country']) && $data['country']["isEU"]) {
-        //         $form->add('taxNumber', TextType::class, [
-        //             'attr' => ['class' => 'form-control tax-number-field', 'style' => 'display: none;'],
-        //             'required' => false,
-                    
-        //         ]);
-        //     }
-        // });
         ->add('country', EntityType::class, [
             'class' => Country::class,
             'choice_label' => 'name',
@@ -79,10 +67,67 @@ class AddressType extends AbstractType
             'choice_attr' => function($country) {
                 return $country->isEU() ? ['attr-isEu' => '1'] : ['attr-isEu' => '0'];
             },
+            'row_attr' => [
+                'class' => 'country_container',
+                'id' => 'counry-container' 
+            ],
         ])
-        ->add('taxNumber', TextType::class, [
-            'attr' => ['class' => 'form-control'],
-        ])
+        ->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) {
+            $data = $event->getData();
+            $form = $event->getForm();
+
+            // if ($data->getCountryId() != null ) {
+            //     $isEu = $this->entityManager->getRepository(Country::class)->find($data->getCountryId())->isEU();
+
+            //     if ($isEu) {
+            // if ($data) {
+            //     dd($data);
+            // } 
+            // if ($data && $data->getCountryId() == null) {
+            //     dd($data->getCountryId());
+            // }
+
+
+            if (($data == null) || ($data && $data->getCountryId() == null) || $data && $data->getCountryId() && $data->getCountryId()->isEU()) {
+                
+                $form->add('taxNumber', TextType::class, [
+                    'attr' => ['class' => 'form-control tax-number-field'],
+                    'required' => false,
+                    'row_attr' => [
+                        'class' => 'tax_container',
+                        'id' => 'tax-container' 
+                    ],
+                ]);
+            } 
+            // } 
+        })
+        // ->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) {
+        //     $data = $event->getData();
+        //     $form = $event->getForm();
+
+        //     // if (isset($data) && isset($data['country']) && is_numeric($data['country'])) {
+        //     //     $isEu = $this->entityManager->getRepository(Country::class)->find($data['country'])->isEU();
+
+        //     //     if ($isEu) {
+        //             $form->add('taxNumber', TextType::class, [
+        //                 'attr' => ['class' => 'form-control tax-number-field', 'style' => 'display: none;'],
+        //                 'required' => false,
+        //                 'row_attr' => [
+        //                     'class' => 'tax_container',
+        //                     'id' => 'tax-container' 
+        //                 ],
+        //             ]);
+        //         // }
+        //     // } 
+        // })
+
+        // ->add('taxNumber', TextType::class, [
+        //     'attr' => ['class' => 'form-control'],
+        //     'row_attr' => [
+        //         'class' => 'tax_container',
+        //         'id' => 'tax-container' 
+        //     ],
+        // ])
         ->add('telephone', TextType::class, [
             'attr' => ['class' => 'form-control'],
         ])
@@ -109,7 +154,9 @@ class AddressType extends AbstractType
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults([
-            'data_class' => Address::class
+            'data_class' => Address::class,
+            'attr' => ['id' => 'address-form'],
+            'action' => '/shop/deliveryaddress',
         ]);
     }
 }

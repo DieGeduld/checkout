@@ -26,32 +26,34 @@ use Symfony\Component\Workflow\Registry;
 use App\Form\Type\AddressType;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Order;
-
+use Symfony\Component\Form\FormFactoryInterface;
 
 class ShopController extends AbstractController
 {
     private $entityManager;
     private $requestStack;
     private $security;
-    private $workflow;
+    private $checkoutProcessWorkflow;
     private $workflowRegistry;
     private $productService;
     private $shoppingCartProducts;
     private $shoppingCart;
     private $addresses;
+    private $formFactory;
 
 
-    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security, Workflow $workflow, Registry $workflowRegistry, ProductService $productService)
+    public function __construct(EntityManagerInterface $entityManager, RequestStack $requestStack, Security $security, Workflow $checkoutProcessWorkflow, Registry $workflowRegistry, ProductService $productService, FormFactoryInterface $formFactory)
     {
         $this->entityManager = $entityManager;
         $this->requestStack = $requestStack;
         $this->security = $security;
-        $this->workflow = $workflow;
+        $this->checkoutProcessWorkflow = $checkoutProcessWorkflow;
         $this->workflowRegistry = $workflowRegistry;
         $this->productService = $productService;
         $this->shoppingCartProducts = $productService->getShoppingCartProducts();
         $this->shoppingCart = $productService->getShoppingCart();
         $this->addresses = $productService->getAddresses();
+        $this->formFactory = $formFactory;
         
     }
 
@@ -267,17 +269,29 @@ class ShopController extends AbstractController
     public function deliveryaddress(EntityManagerInterface $entityManager, Request $request): Response
     {
 
-        
-        $address = new Address();
-        $form = $this->createForm(AddressType::class, $address);
+        $deliveryAddressData = new Address();
+        // Optionally, pre-populate $deliveryAddressData here
 
+        $form = $this->formFactory->create(AddressType::class, $deliveryAddressData);
         $form->handleRequest($request);
+
+
+
+
+
+
+        // $form = $this->formFactory->create(AddressType::class);
+        // $form->handleRequest($request);
+
+        // $address = new Address();
+        // $form = $this->createForm(AddressType::class, $address);
+
+        // $form->handleRequest($request);
         
         if ($form->isSubmitted() && $form->isValid()) {
 
             if ($this->security->getUser()) {
                 
-
             } else {
 
                 // save address to session
@@ -298,9 +312,8 @@ class ShopController extends AbstractController
 
             }
         }
-
     
-        $this->changeState("delivery_address");
+       
 
 
         $session = $this->requestStack->getSession();
@@ -329,6 +342,61 @@ class ShopController extends AbstractController
         }
 
         $form = $this->createForm(AddressType::class, $address);
+
+        $this->changeState("delivery_address");
+        if ($this->security->getUser()) {
+
+            $currentAddress = $this->security->getUser()->getCurrentAddress();
+        
+            return $this->render('shop/deliveryaddress.html.twig', [
+                'currentAddress' => $currentAddress,
+                'addresses' => $this->addresses,
+                'form' => $form,
+            ]);
+
+        } else {
+
+            return $this->render('shop/deliveryaddress.html.twig', [
+                'currentAddress' => null,
+                'form' => $form,
+            ]);
+        
+        }
+
+
+        // return $this->buildAddressForm();
+    }
+
+    private function buildAddressForm(): Response
+    {
+       
+        $session = $this->requestStack->getSession();
+        $userData = $session->get('userData', []);
+
+        $address = new Address();
+
+        if ($userData) {
+            
+            // Setzen Sie die Eigenschaften des Address-Objekts basierend auf den Session-Daten
+            $address->setFirstName($userData['firstName'] ?? "");
+            $address->setLastName($userData['lastName'] ?? "");
+            $address->setStreet($userData['street'] ?? "");
+            $address->setNumber($userData['number'] ?? "");
+            $address->setCity($userData['city'] ?? "");
+            $address->setZip($userData['zip'] ?? "");
+            
+            if ($userData['country'] instanceof Country) {
+                $userData['country'] = $this->entityManager->merge($userData['country']);
+            }
+
+            $address->setCountry($userData['country'] ?? "");
+            $address->setTaxNumber($userData['taxNumber'] ?? "");
+            $address->setTelephone($userData['telephone'] ?? "");
+            $address->setEmail($userData['email'] ?? "");
+        }
+
+        $form = $this->createForm(AddressType::class, $address);
+        
 
         if ($this->security->getUser()) {
 

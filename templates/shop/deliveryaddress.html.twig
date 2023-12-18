@@ -49,7 +49,74 @@
                 <h4 class="font-weight-bold">Als Gast bestellen:</h4>
                 
                 {{ form_start(form) }}
-                {{ form_widget(form) }}
+
+                    <div class="form-group">
+                        {{ form_label(form.firstName) }}
+                        {{ form_widget(form.firstName) }}
+                        {{ form_errors(form.firstName) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_label(form.lastName) }}
+                        {{ form_widget(form.lastName) }}
+                        {{ form_errors(form.lastName) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_label(form.street) }}
+                        {{ form_widget(form.street) }}
+                        {{ form_errors(form.street) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_label(form.number) }}
+                        {{ form_widget(form.number) }}
+                        {{ form_errors(form.number) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_label(form.city) }}
+                        {{ form_widget(form.city) }}
+                        {{ form_errors(form.city) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_label(form.zip) }}
+                        {{ form_widget(form.zip) }}
+                        {{ form_errors(form.zip) }}
+                    </div>
+
+                    <div class="form-group country_container" id="country-container">
+                        {{ form_label(form.country) }}
+                        {{ form_widget(form.country) }}
+                        {{ form_errors(form.country) }}
+                    </div>
+
+                    {# Dynamically display the taxNumber field if it's added to the form #}
+                    {% if form.taxNumber is defined %}
+                        <div class="form-group tax_container" id="tax-container">
+                            {{ form_label(form.taxNumber) }}
+                            {{ form_widget(form.taxNumber) }}
+                            {{ form_errors(form.taxNumber) }}
+                        </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        {{ form_label(form.telephone) }}
+                        {{ form_widget(form.telephone) }}
+                        {{ form_errors(form.telephone) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_label(form.email) }}
+                        {{ form_widget(form.email) }}
+                        {{ form_errors(form.email) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+
                 {{ form_end(form) }}
 
             </div>
