@@ -1,0 +1,31 @@
+version: '3.7'
+
+services: 
+  symfony_app:
+    build: .
+    image: php:8.1-fpm
+    working_dir: /var/www
+    command: php-fpm
+    networks:
+      - symfony_network
+    ports:
+      - "9000:80"
+    volumes:
+      - .:/var/www
+      - ./var/data.db:/var/www/var/data.db
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "4444:80"
+    depends_on:
+      - symfony_app
+    networks:
+      - symfony_network
+    volumes:
+      - .:/var/www
+      - ./.docker/nginx/conf:/etc/nginx/conf.d
+
+networks:
+  symfony_network:
+    driver: bridge

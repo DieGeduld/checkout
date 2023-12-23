@@ -52,9 +52,12 @@ $(function () {
         $replace = $(".editableShoppingCartWrapper");
 
         let url = "";
-        if ($this.is("a")) {
+        if ($this.is("a") || $this.is("button")) {
             url = $this.attr('href');
         } else {
+            if (e.type === "click") {
+                return;
+            }
             url = $this.closest("form").attr('action');
             url += "?" + $this.closest("form").serialize();
         }

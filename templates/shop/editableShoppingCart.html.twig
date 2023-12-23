@@ -24,7 +24,9 @@
                         <!-- busted! -->
                         <form style="margin: 0" action="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}" method="post">
                             <input class="quantity ajax" type="number" name="quantity" min="0" value="{{ item.quantity }}">
-                            <input class="updateItem" type="submit" value="Update">
+                            <noscript>
+                                <input class="updateItem" type="submit" value="Update">
+                            </noscript>
                         </form>
                         {# <input class="quantity" type="number" min="0" value="{{ item.quantity }}">
                         <a class="updateItem" href="{{ path('app_shop_shoppingcart_update', {'id': item.id}) }}">Update</a> #}

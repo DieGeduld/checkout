@@ -1,0 +1,32 @@
+# Verzeichnisse
+/vendor/
+/node_modules/
+/var/
+/bin/
+!bin/console
+!bin/phpunit
+/tests/
+
+# Spezifische Dateien
+# .env
+# .env.*
+.dockerignore
+.git
+.gitignore
+README.md
+Dockerfile
+docker-compose.yml
+npm-debug.log
+composer.lock
+
+# Cache & Logs
+/var/cache/*
+/var/log/*
+!var/cache/.gitkeep
+!var/log/.gitkeep
+
+# Sessions
+/var/sessions/*
+
+# Built assets
+/public/build/
