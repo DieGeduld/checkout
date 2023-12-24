@@ -92,6 +92,10 @@ class ShopController extends AbstractController
             return $this->redirectToRoute('app_shop_shoppingcart');
         }
 
+        if ($quantity == 0) {
+            return $this->redirectToRoute('app_shop_shoppingcart_remove', ['id' => $product->getId()]);
+        }
+
         if ($product && $this->shoppingCart) {
 
             // getting ShoppingCartProduct

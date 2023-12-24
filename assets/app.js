@@ -61,6 +61,8 @@ $(function () {
             url = $this.closest("form").attr('action');
             url += "?" + $this.closest("form").serialize();
         }
+
+        $this.attr("disabled", true);
     
         $.ajax({
             url: url,

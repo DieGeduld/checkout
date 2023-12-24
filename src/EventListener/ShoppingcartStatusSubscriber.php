@@ -33,17 +33,16 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
     private $productService;
     private $shoppingCartProducts;
     private $shoppingCart;
-    
+
     public function __construct(Security $security, EntityManagerInterface $entityManager, TwigEnvironment $twig, RequestStack $requestStack, ProductService $productService)
     {
         $this->security = $security;
-        $this->entityManager = $entityManager;
         $this->twig = $twig;
         $this->requestStack = $requestStack;
         $this->productService = $productService;
     }
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             KernelEvents::REQUEST => [
