@@ -102,5 +102,59 @@ class ProductService
             $this->entityManager->flush();
         }
     }
+
+    // public function mergeShoppingCarts(ShoppingCart $oldShoppingCart, ShoppingCart $newShoppingCart): void
+    // {
+    //     $oldShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $oldShoppingCart->getId()]);
+    //     $newShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $newShoppingCart->getId()]);
+
+    //     foreach ($oldShoppingCartProducts as $oldShoppingCartProduct) {
+    //         foreach ($newShoppingCartProducts as $newShoppingCartProduct) {
+    //             if ($oldShoppingCartProduct->getProduct()->getId() == $newShoppingCartProduct->getProduct()->getId()) {
+    //                 $newShoppingCartProduct->setQuantity($newShoppingCartProduct->getQuantity() + $oldShoppingCartProduct->getQuantity());
+    //                 $this->entityManager->remove($oldShoppingCartProduct);
+    //                 $this->entityManager->flush();
+    //             }
+    //         }
+    //     }
+    // }
+
+    public function mergeShoppingCarts(ShoppingCart $oldShoppingCart, ShoppingCart $newShoppingCart): void
+{
+    // Holen der Produkte des alten Warenkorbs
+    $oldShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $oldShoppingCart->getId()]);
+
+    // Holen der Produkte des neuen Warenkorbs
+    $newShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $newShoppingCart->getId()]);
+
+    // Durchlaufen aller Produkte im neuen Warenkorb
+    foreach ($newShoppingCartProducts as $newProduct) {
+        $existsInOldCart = false;
+
+        // Überprüfen, ob das Produkt bereits im alten Warenkorb vorhanden ist
+        foreach ($oldShoppingCartProducts as $oldProduct) {
+            if ($newProduct->getId() === $oldProduct->getId()) {
+                // Update der Produktmenge im alten Warenkorb, falls notwendig
+                $oldProduct->setQuantity($oldProduct->getQuantity() + $newProduct->getQuantity());
+                $this->entityManager->persist($oldProduct);
+                $existsInOldCart = true;
+                break;
+            }
+        }
+
+        // Hinzufügen des Produkts zum alten Warenkorb, falls es noch nicht vorhanden ist
+        if (!$existsInOldCart) {
+            $newProduct->setShoppingCart($oldShoppingCart);
+            $this->entityManager->persist($newProduct);
+        }
+    }
+
+    // Löschen des neuen Warenkorbs, da seine Inhalte nun im alten Warenkorb sind
+    $this->entityManager->remove($newShoppingCart);
+
+    // Speichern der Änderungen in der Datenbank
+    $this->entityManager->flush();
+}
+
     
 }

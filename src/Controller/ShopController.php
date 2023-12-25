@@ -160,6 +160,7 @@ class ShopController extends AbstractController
 
         } else {
             // return from where you came
+            $this->addFlash('success', $message);
             $request = $this->requestStack->getCurrentRequest();
             $referer = $request->headers->get('referer');
             if ($referer === null) {
@@ -278,7 +279,7 @@ class ShopController extends AbstractController
             $referer = $this->generateUrl('app_shop');
         }
 
-        return $this->requestDone($request, "wihup");
+        return $this->requestDone($request, "Increased \"" . $product->getName() . "\" in shopping cart");
         // return $this->redirect($referer);
     }
 
@@ -305,8 +306,7 @@ class ShopController extends AbstractController
         if ($referer === null) {
             $referer = $this->generateUrl('app_shop');
         }
-        return $this->requestDone($request, "wihup");
-        // return $this->redirect($referer);
+        return $this->requestDone($request, "Decreased \"" . $product->getName() . "\" in shopping cart");
     }
 
     // app_shop_shoppingcart_remove

@@ -9,21 +9,22 @@ use App\Entity\ShoppingCart;
 use App\Entity\ShoppingCartProduct;
 use Doctrine\Common\Lexer\Token;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use App\Services\ProductService;
 
 class LoginListener
 {    private $requestStack;
     private $entityManager;
-    public function __construct(RequestStack $requestStack, EntityManagerInterface $entityManager)
+    private $productService;
+    public function __construct(RequestStack $requestStack, EntityManagerInterface $entityManager, ProductService $productService)
     {
         $this->requestStack = $requestStack;
         $this->entityManager = $entityManager;
+        $this->productService = $productService;
 
     }
 
     public function onSecurityInteractiveLogin(InteractiveLoginEvent $event)
     {
-        // TODO: Copy Item from session to user
-        return;
 
         $session = $this->requestStack->getSession();
         $user = $event->getAuthenticationToken()->getUser();
@@ -44,13 +45,7 @@ class LoginListener
                     ->getQuery()
                     ->execute();
             } else if ( $oldShoppingCart && $newShoppingCart) {
-                // $queryBuilder = $this->entityManager->createQueryBuilder();
-                // $queryBuilder->select('scp')
-                //     ->from(ShoppingCartProduct::class, 'scp')
-                //     ->where('scp.shoppingcart_id = :oldShoppingCart')
-                //     ->setParameter('oldShoppingCart', $oldShoppingCart->getId())
-                //     ->getQuery()
-                //     ->execute();
+                $this->productService->mergeShoppingCarts($oldShoppingCart, $newShoppingCart);
 
             }
         }

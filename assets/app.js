@@ -10,7 +10,7 @@
 // import bootstrap
 
 const $ = require('jquery');
-require('bootstrap');
+const bootstrap = require('bootstrap');
 
 require('./styles/app.scss');
 require('bootstrap/dist/css/bootstrap.min.css');
@@ -46,10 +46,21 @@ $(function () {
     }
 
 
+    $('input.ajax').on('keypress', function(event) {
+        if (event.which === 13) {
+            event.preventDefault();
+            $(this).trigger('change');
+        }
+    });
+
     $(document).on("click change", ".ajax", (e) => {
         e.preventDefault();
         $this = $(e.currentTarget);
         $replace = $(".editableShoppingCartWrapper");
+
+        if ($this.attr("disabled")) {
+            return;
+        }
 
         let url = "";
         if ($this.is("a") || $this.is("button")) {
@@ -69,21 +80,58 @@ $(function () {
             type: 'GET',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             success: function (data) {
-                $replace.html(data.editableShoppingCartHtmlWrapper);
-                console.log(data.products);
+                $replace.replaceWith(data.editableShoppingCartHtmlWrapper);
                 if (data.products.length) {
                     $(".toShoppingCart").removeClass("d-none");
                 }  else {
                     $(".toShoppingCart").addClass("d-none");
                 } 
-                //Todo: Flash message: data.message
+
+                // console.log(data.message);
+
+
+                createToast(data.message);
+
+                // var toastElement = document.getElementById('thetoast');
+                // toastElement.querySelector('.toast-body').innerHTML = data.message;
+                // var toast = new bootstrap.Toast(toastElement);
+                // toast.show();
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log(textStatus, errorThrown);
                 // Todo: error flash message
+            },
+            complete: function () {
+                $this.attr("disabled", false);
             }
         });
     });
+
+    function createToast(message) {
+        var toastContainer = document.getElementById('toastContainer');
+      
+        // Erstellen des Toast-Elements
+        var toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.role = 'alert';
+        toast['aria-live'] = 'assertive';
+        toast['aria-atomic'] = 'true';
+        toast.innerHTML = `
+          <div class="toast-header">
+            <strong class="me-auto">Toast Nachricht</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body">${message}</div>
+        `;
+      
+        // Toast zum Container hinzufügen und anzeigen
+        toastContainer.appendChild(toast);
+        var toastElement = new bootstrap.Toast(toast, { delay: 1300 });
+        toastElement.show();
+      }
+      
+
+
 
     // Direkt über Attribt:
 
