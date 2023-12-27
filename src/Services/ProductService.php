@@ -17,6 +17,9 @@ class ProductService
     private $entityManager;
     private $security;
     private $request;
+    private $shoppingCartProducts = null;
+    private $shoppingCart = null;
+
     public function __construct(EntityManagerInterface $entityManager, Security $security, RequestStack $requestStack)
     {
         $this->entityManager = $entityManager;
@@ -26,50 +29,64 @@ class ProductService
 
     public function getShoppingCartProducts(): array
     {
-        $shoppingCart = $this->getShoppingCart();       
+        // if ($this->shoppingCartProducts === null) {
+            $shoppingCart = $this->getShoppingCart();   
 
-        $queryBuilder = $this->entityManager->createQueryBuilder();
+            $queryBuilder = $this->entityManager->createQueryBuilder();
 
-        $queryBuilder->select([
-            'p.id AS id',
-            'scp.quantity AS quantity',
-            'p.name AS name',
-            'p.price AS price',
-            'p.price * scp.quantity AS sum'
-        ])
-        ->from(ShoppingCartProduct::class, 'scp')
-        ->join('scp.product', 'p') // Annahme, dass ShoppingCartProduct eine 'product' Beziehung hat
-        ->where('scp.shoppingcart = :shoppingCartId')
-        ->setParameter('shoppingCartId', $shoppingCart->getId());
-        
-        $shoppingCartProducts = $queryBuilder->getQuery()->getResult();
-        return $shoppingCartProducts;
+            $queryBuilder->select([
+                'p.id AS id',
+                'scp.quantity AS quantity',
+                'p.name AS name',
+                'p.price AS price',
+                'p.price * scp.quantity AS sum'
+            ])
+            ->from(ShoppingCartProduct::class, 'scp')
+            ->join('scp.product', 'p')
+            ->where('scp.shoppingcart = :shoppingCartId')
+            ->setParameter('shoppingCartId', $shoppingCart->getId());
+            
+            $shoppingCartProducts = $queryBuilder->getQuery()->getResult();
+
+            $this->shoppingCartProducts = $shoppingCartProducts;
+        // }
+        return $this->shoppingCartProducts;;
     }
 
 
     public function getShoppingCart(): ?ShoppingCart
     { 
-        if ($this->security->getUser() == null) {
+        // if ($this->shoppingCart === null) {
+            if ($this->security->getUser() == null) {
 
-            $session = $this->request->getSession();
-            $sessionId = $session->getId();
+                $session = $this->request->getSession();
+                $sessionId = $session->getId();
 
-            $sessionId = $this->request->getSession()->getId();
+                $sessionId = $this->request->getSession()->getId();
 
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
+                $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
 
-            if ($shoppingCart == null) {
-                $shoppingCart = new ShoppingCart();
-                $shoppingCart->setSessionId($sessionId);
-                $shoppingCart->setState("shopping");
-                $this->entityManager->persist($shoppingCart);
-                $this->entityManager->flush();
+                if ($shoppingCart == null) {
+                    $shoppingCart = new ShoppingCart();
+                    $shoppingCart->setSessionId($sessionId);
+                    $shoppingCart->setState("shopping");
+                    $this->entityManager->persist($shoppingCart);
+                    $this->entityManager->flush();
+                }
+
+            } else {
+                $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
+                if ($shoppingCart == null) {
+                    $shoppingCart = new ShoppingCart();
+                    $shoppingCart->setUserId($this->security->getUser());
+                    $shoppingCart->setState("shopping");
+                    $this->entityManager->persist($shoppingCart);
+                    $this->entityManager->flush();
+                }
             }
-
-        } else {
-            $shoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $this->security->getUser()->getId()]);
-        }
-        return $shoppingCart;
+            $this->shoppingCart = $shoppingCart;
+        // }
+        return $this->shoppingCart;
     }
 
     public function getShoppingCartSum(): float
@@ -103,58 +120,37 @@ class ProductService
         }
     }
 
-    // public function mergeShoppingCarts(ShoppingCart $oldShoppingCart, ShoppingCart $newShoppingCart): void
-    // {
-    //     $oldShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $oldShoppingCart->getId()]);
-    //     $newShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $newShoppingCart->getId()]);
-
-    //     foreach ($oldShoppingCartProducts as $oldShoppingCartProduct) {
-    //         foreach ($newShoppingCartProducts as $newShoppingCartProduct) {
-    //             if ($oldShoppingCartProduct->getProduct()->getId() == $newShoppingCartProduct->getProduct()->getId()) {
-    //                 $newShoppingCartProduct->setQuantity($newShoppingCartProduct->getQuantity() + $oldShoppingCartProduct->getQuantity());
-    //                 $this->entityManager->remove($oldShoppingCartProduct);
-    //                 $this->entityManager->flush();
-    //             }
-    //         }
-    //     }
-    // }
-
     public function mergeShoppingCarts(ShoppingCart $oldShoppingCart, ShoppingCart $newShoppingCart): void
-{
-    // Holen der Produkte des alten Warenkorbs
-    $oldShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $oldShoppingCart->getId()]);
+    {
+        $oldShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $oldShoppingCart->getId()]);
+        $newShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $newShoppingCart->getId()]);
 
-    // Holen der Produkte des neuen Warenkorbs
-    $newShoppingCartProducts = $this->entityManager->getRepository(ShoppingCartProduct::class)->findBy(['shoppingcart' => $newShoppingCart->getId()]);
-
-    // Durchlaufen aller Produkte im neuen Warenkorb
-    foreach ($newShoppingCartProducts as $newProduct) {
-        $existsInOldCart = false;
-
-        // Überprüfen, ob das Produkt bereits im alten Warenkorb vorhanden ist
+        // Durchlaufen aller Produkte im alten Warenkorb
         foreach ($oldShoppingCartProducts as $oldProduct) {
-            if ($newProduct->getId() === $oldProduct->getId()) {
-                // Update der Produktmenge im alten Warenkorb, falls notwendig
-                $oldProduct->setQuantity($oldProduct->getQuantity() + $newProduct->getQuantity());
-                $this->entityManager->persist($oldProduct);
-                $existsInOldCart = true;
-                break;
+
+            $existsInNewCart = false;
+
+            foreach ($newShoppingCartProducts as $newProduct) {
+                if ($oldProduct->getProduct()->getId() === $newProduct->getProduct()->getId()) {
+                    $newProduct->setQuantity( $newProduct->getQuantity() + $oldProduct->getQuantity() );
+                    $this->entityManager->persist($newProduct);
+                    $existsInNewCart = true;
+                    break;
+                }
+            }
+
+            // Hinzufügen des Produkts zum neuen Warenkorb, falls es noch nicht vorhanden ist
+            if (!$existsInNewCart) {
+                $newProduct = new ShoppingCartProduct();
+                $newProduct->setShoppingcart($newShoppingCart);
+                $newProduct->setProduct($oldProduct->getProduct());
+                $newProduct->setQuantity($oldProduct->getQuantity());
+                $this->entityManager->persist($newProduct);
             }
         }
 
-        // Hinzufügen des Produkts zum alten Warenkorb, falls es noch nicht vorhanden ist
-        if (!$existsInOldCart) {
-            $newProduct->setShoppingCart($oldShoppingCart);
-            $this->entityManager->persist($newProduct);
-        }
+        $this->entityManager->remove($oldShoppingCart);
+        $this->entityManager->flush();
     }
-
-    // Löschen des neuen Warenkorbs, da seine Inhalte nun im alten Warenkorb sind
-    $this->entityManager->remove($newShoppingCart);
-
-    // Speichern der Änderungen in der Datenbank
-    $this->entityManager->flush();
-}
-
     
 }

@@ -46,7 +46,7 @@ class ShoppingcartStatusSubscriber implements EventSubscriberInterface
     {
         return [
             KernelEvents::REQUEST => [
-                ['onKernelRequest', 10]
+                ['onKernelRequest', 3]
             ],
             // 'workflow.checkout_process.to_shopping_cart' => 'onTransitionToShoppingCart',
             // 'workflow.checkout_process.to_shopping_cart' => ['onTransitionToShoppingCart'],

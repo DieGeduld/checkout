@@ -20,7 +20,6 @@ class LoginListener
         $this->requestStack = $requestStack;
         $this->entityManager = $entityManager;
         $this->productService = $productService;
-
     }
 
     public function onSecurityInteractiveLogin(InteractiveLoginEvent $event)
@@ -30,23 +29,24 @@ class LoginListener
         $user = $event->getAuthenticationToken()->getUser();
 
         $sessionId = $session->getId();
-
+        
         if ($session != null) {
             $oldShoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['sessionId' => $sessionId]);
             $newShoppingCart = $this->entityManager->getRepository(ShoppingCart::class)->findOneBy(['user_id' => $user->getId()]);
 
-
-            if ($oldShoppingCart && !$newShoppingCart) {
-                $queryBuilder = $this->entityManager->createQueryBuilder();
-                $queryBuilder->update(ShoppingCartProduct::class, 'scp')
-                    ->set('scp.shoppingcart_id', $newShoppingCart->getId())
-                    ->where('scp.shoppingcart_id = :oldShoppingCart')
-                    ->setParameter('oldShoppingCart', $oldShoppingCart->getId())
-                    ->getQuery()
-                    ->execute();
-            } else if ( $oldShoppingCart && $newShoppingCart) {
+            if (!$newShoppingCart && !$oldShoppingCart->getUserId()) {
+                $oldShoppingCart->setUserId($user);
+                $this->entityManager->persist($oldShoppingCart);
+                $this->entityManager->flush();
+            } else if ($newShoppingCart && $oldShoppingCart) {
                 $this->productService->mergeShoppingCarts($oldShoppingCart, $newShoppingCart);
-
+            } else if ($oldShoppingCart && !$newShoppingCart) {
+                $newShoppingCart = new ShoppingCart();
+                $newShoppingCart->setSessionId($sessionId);
+                $newShoppingCart->setUserId($user);
+                $this->entityManager->persist($newShoppingCart);
+                $this->entityManager->flush();
+                $this->productService->mergeShoppingCarts($oldShoppingCart, $newShoppingCart);
             }
         }
     }

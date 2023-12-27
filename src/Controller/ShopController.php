@@ -141,8 +141,8 @@ class ShopController extends AbstractController
     private function requestDone($request, $message = "") {
         if ($request->isXmlHttpRequest()) {
 
-            $this->twig->addGlobal('shoppingcart', $this->productService->getShoppingCartProducts());        
-            $this->twig->addGlobal('shoppingcartsum', $this->productService->getShoppingCartSum());   
+            $this->twig->addGlobal('shoppingcart', $this->productService->getShoppingCartProducts());
+            $this->twig->addGlobal('shoppingcartsum', $this->productService->getShoppingCartSum());
             
             $editableShoppingCartHtmlWrapper = $this->renderView('shop/editableShoppingCart.html.twig');
 
