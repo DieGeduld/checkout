@@ -45,12 +45,16 @@ $(function () {
         });
     }
 
-
-    $('input.ajax').on('keypress', function(event) {
+    $('input.ajax').on('keypress blur', function(event) {
         if (event.which === 13) {
             event.preventDefault();
             $(this).trigger('change');
         }
+    });
+
+    $(document).on('submit', '[action^="/shop/update"]', function(event) {
+        event.preventDefault();
+        return false;
     });
 
     $(document).on("click change", ".ajax", (e) => {
