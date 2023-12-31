@@ -14,7 +14,8 @@ use Symfony\Component\Security\Http\Event\LogoutEvent;
 use Symfony\Component\Security\Core\Security;
 
 class LoginListener
-{    private $requestStack;
+{
+    private $requestStack;
     private $entityManager;
     private $productService;
     private $security;

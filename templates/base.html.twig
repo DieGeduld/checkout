@@ -27,9 +27,9 @@
                 <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
 
                     <div class="navbar-nav">
-                        <a class="nav-item nav-link active" href="{{ path('app_home') }}">Home</a>
-                        <a class="nav-item nav-link" href="{{ path('app_shop') }}">Shop</a>
-                        <a class="nav-item nav-link" href="{{ path('app_shop_shoppingcart') }}">Warenkorb ({{ shoppingcart|length }})</a>
+                        <a class="app_home nav-item nav-link active" href="{{ path('app_home') }}">Home</a>
+                        <a class="app_shop nav-item nav-link" href="{{ path('app_shop') }}">Shop</a>
+                        <a class="app_shop_shoppingcart nav-item nav-link" href="{{ path('app_shop_shoppingcart') }}">Warenkorb ({{ shoppingcart|length }})</a>
                     </div>
                 </div>
                 {% if app.user %}
@@ -58,7 +58,7 @@
         <div class="container">
 
             {% if app.request.get('_route') == 'app_shop' %}
-                <div class="app_shop_shoppingcart"> 
+                <div class="quick_shoppingcart"> 
                     <h4>Schnellübersicht</h4>
                     {% include 'shop/editableShoppingCart.html.twig' %}
                     

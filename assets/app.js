@@ -81,21 +81,16 @@ $(function () {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             success: function (data) {
                 $replace.replaceWith(data.editableShoppingCartHtmlWrapper);
+                $('.app_shop_shoppingcart').text(function() {
+                    return $(this).text().replace(/\(\d+\)/, '(' +  data.products.length + ')');
+                });
+
                 if (data.products.length) {
                     $(".toShoppingCart").removeClass("d-none");
                 }  else {
                     $(".toShoppingCart").addClass("d-none");
                 } 
-
-                // console.log(data.message);
-
-
                 createToast(data.message);
-
-                // var toastElement = document.getElementById('thetoast');
-                // toastElement.querySelector('.toast-body').innerHTML = data.message;
-                // var toast = new bootstrap.Toast(toastElement);
-                // toast.show();
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log(textStatus, errorThrown);
